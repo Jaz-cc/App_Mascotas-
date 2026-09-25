@@ -7,6 +7,7 @@ import 'package:jamikapet/src/presentation/widgets/app_button.dart';
 import 'package:jamikapet/src/presentation/widgets/app_terms_checkbox.dart';
 import 'package:jamikapet/src/presentation/widgets/app_logo.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:jamikapet/src/presentation/pages/auth/login/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -398,7 +399,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ),
+                              );
                             },
 
                             child: const Text(
