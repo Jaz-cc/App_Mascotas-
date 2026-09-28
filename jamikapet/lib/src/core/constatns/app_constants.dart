@@ -1,0 +1,1 @@
+const String urlPoliticaPrivacidad = 'https://miriam-23.github.io/jamika-pet-politica/';
