@@ -27,6 +27,7 @@ class AppTermsCheckbox extends StatelessWidget {
 
         Expanded(
           child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text(
                 'Acepto la ',

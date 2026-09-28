@@ -13,7 +13,6 @@ class JamikaPetApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'JAMIKA PET',
-
       debugShowCheckedModeBanner: false,
 
       // Tema de la aplicación
@@ -25,13 +24,8 @@ class JamikaPetApp extends StatelessWidget {
       ),
 
       // Pantalla inicial
-      initialRoute: '/register',
-
-      // Rutas de navegación
-      routes: {
-        '/register': (context) => const RegisterPage(),
-        '/home': (context) => const HomePage(),
-      },
+      home: const RegisterPage(),
     );
   }
 }
+

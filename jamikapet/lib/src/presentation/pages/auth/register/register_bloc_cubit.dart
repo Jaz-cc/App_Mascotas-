@@ -1,10 +1,10 @@
 import 'dart:async';
 
 class RegisterBlocCubit {
-
   // ============================================================
   // CONTROLLERS
   // ============================================================
+
   final StreamController<String> _nameController =
       StreamController<String>.broadcast();
 
@@ -26,6 +26,7 @@ class RegisterBlocCubit {
   // ============================================================
   // VALORES
   // ============================================================
+
   String _name = '';
   String _lastname = '';
   String _email = '';
@@ -35,6 +36,7 @@ class RegisterBlocCubit {
   // ============================================================
   // STREAMS
   // ============================================================
+
   Stream<String> get nameStream => _nameController.stream;
 
   Stream<String> get lastnameStream => _lastnameController.stream;
@@ -43,15 +45,16 @@ class RegisterBlocCubit {
 
   Stream<String> get passwordStream => _passwordController.stream;
 
-  Stream<String> get confirmPasswordStream => _confirmPasswordController.stream;
+  Stream<String> get confirmPasswordStream =>
+      _confirmPasswordController.stream;
 
   Stream<bool> get validateForm => _validateFormController.stream;
 
   // ============================================================
   // NOMBRE
   // ============================================================
-  void changeName(String value) {
 
+  void changeName(String value) {
     _name = value.trim();
 
     final error = _validateName(_name);
@@ -68,8 +71,8 @@ class RegisterBlocCubit {
   // ============================================================
   // APELLIDO
   // ============================================================
-  void changelastname(String value) {
 
+  void changeLastname(String value) {
     _lastname = value.trim();
 
     final error = _validateLastname(_lastname);
@@ -86,8 +89,8 @@ class RegisterBlocCubit {
   // ============================================================
   // EMAIL
   // ============================================================
-  void changeEmail(String value) {
 
+  void changeEmail(String value) {
     _email = value.trim();
 
     final error = _validateEmail(_email);
@@ -104,8 +107,8 @@ class RegisterBlocCubit {
   // ============================================================
   // CONTRASEÑA
   // ============================================================
-  void changePassword(String value) {
 
+  void changePassword(String value) {
     _password = value;
 
     final error = _validatePassword(_password);
@@ -116,33 +119,28 @@ class RegisterBlocCubit {
       _passwordController.add(_password);
     }
 
-    // También debemos comprobar nuevamente la confirmación de contraseña.
+    // Validar nuevamente la confirmación de contraseña.
     if (_confirmPassword.isNotEmpty) {
-
-      final confirmError =
-          _validateConfirmPassword(
+      final confirmError = _validateConfirmPassword(
         _password,
         _confirmPassword,
       );
 
       if (confirmError != null) {
-        _confirmPasswordController
-            .addError(confirmError);
+        _confirmPasswordController.addError(confirmError);
       } else {
-        _confirmPasswordController
-            .add(_confirmPassword);
+        _confirmPasswordController.add(_confirmPassword);
       }
     }
 
     _validateForm();
   }
 
-
   // ============================================================
   // CONFIRMAR CONTRASEÑA
   // ============================================================
-  void changeConfirmPassword(String value) {
 
+  void changeConfirmPassword(String value) {
     _confirmPassword = value;
 
     final error = _validateConfirmPassword(
@@ -153,19 +151,17 @@ class RegisterBlocCubit {
     if (error != null) {
       _confirmPasswordController.addError(error);
     } else {
-      _confirmPasswordController
-          .add(_confirmPassword);
+      _confirmPasswordController.add(_confirmPassword);
     }
 
     _validateForm();
   }
 
-
   // ============================================================
   // VALIDAR NOMBRE
   // ============================================================
-  String? _validateName(String value) {
 
+  String? _validateName(String value) {
     if (value.isEmpty) {
       return 'El nombre es obligatorio';
     }
@@ -189,12 +185,11 @@ class RegisterBlocCubit {
     return null;
   }
 
-
   // ============================================================
   // VALIDAR APELLIDO
   // ============================================================
-  String? _validateLastname(String value) {
 
+  String? _validateLastname(String value) {
     if (value.isEmpty) {
       return 'El apellido es obligatorio';
     }
@@ -218,12 +213,11 @@ class RegisterBlocCubit {
     return null;
   }
 
-
   // ============================================================
   // VALIDAR EMAIL
   // ============================================================
-  String? _validateEmail(String value) {
 
+  String? _validateEmail(String value) {
     if (value.isEmpty) {
       return 'El correo electrónico es obligatorio';
     }
@@ -244,7 +238,6 @@ class RegisterBlocCubit {
   // ============================================================
 
   String? _validatePassword(String value) {
-
     if (value.isEmpty) {
       return 'La contraseña es obligatoria';
     }
@@ -271,11 +264,11 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR CONFIRMACIÓN
   // ============================================================
+
   String? _validateConfirmPassword(
     String password,
     String confirmPassword,
   ) {
-
     if (confirmPassword.isEmpty) {
       return 'Confirma tu contraseña';
     }
@@ -290,14 +283,19 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR FORMULARIO COMPLETO
   // ============================================================
-  void _validateForm() {
 
+  void _validateForm() {
     final validName = _validateName(_name) == null;
     final validLastname = _validateLastname(_lastname) == null;
     final validEmail = _validateEmail(_email) == null;
     final validPassword = _validatePassword(_password) == null;
-    final validConfirmPassword = _validateConfirmPassword(
-          _password, _confirmPassword) == null;
+
+    final validConfirmPassword =
+        _validateConfirmPassword(
+          _password,
+          _confirmPassword,
+        ) ==
+        null;
 
     final valid =
         validName &&
@@ -309,12 +307,11 @@ class RegisterBlocCubit {
     _validateFormController.add(valid);
   }
 
-
   // ============================================================
   // REGISTRO
   // ============================================================
-  Future<void> register() async {
 
+  Future<void> register() async {
     // Validación final antes de registrar.
 
     if (_validateName(_name) != null ||
@@ -322,32 +319,22 @@ class RegisterBlocCubit {
         _validateEmail(_email) != null ||
         _validatePassword(_password) != null ||
         _validateConfirmPassword(
-          _password,
-          _confirmPassword,
-        ) != null) {
-
+              _password,
+              _confirmPassword,
+            ) !=
+            null) {
       return;
     }
 
-
-    // Por ahora solamente mostramos los datos.
-    // Posteriormente aquí conectaremos RegisterService.
-
-    print('========== REGISTRO ==========');
-    print('Nombre: $_name');
-    print('Apellido: $_lastname');
-    print('Email: $_email');
-    print('Contraseña: $_password');
-    print('==============================');
+    // Aquí posteriormente se conectará el servicio
+    // encargado de guardar el usuario.
   }
-
 
   // ============================================================
   // OBTENER DATOS DEL FORMULARIO
   // ============================================================
 
   Map<String, dynamic> get registerData {
-
     return {
       'nombre': _name,
       'apellido': _lastname,
@@ -356,13 +343,11 @@ class RegisterBlocCubit {
     };
   }
 
-
   // ============================================================
   // DISPOSE
   // ============================================================
 
   void dispose() {
-
     _nameController.close();
     _lastnameController.close();
     _emailController.close();
@@ -371,3 +356,4 @@ class RegisterBlocCubit {
     _validateFormController.close();
   }
 }
+
