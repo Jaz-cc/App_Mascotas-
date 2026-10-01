@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:jamikapet/src/presentation/pages/auth/register/register_page.dart';
-import 'package:jamikapet/src/presentation/pages/home/home_page.dart';
+import 'package:jamikapet/src/presentation/pages/auth/login/login_page.dart';
+// import 'package:jamikapet/src/presentation/pages/auth/register/register_page.dart';
+// import 'package:jamikapet/src/presentation/pages/home/home_page.dart';
 
 void main() {
   runApp(const JamikaPetApp());
@@ -24,7 +25,7 @@ class JamikaPetApp extends StatelessWidget {
       ),
 
       // Pantalla inicial
-      home: const RegisterPage(),
+      home: const LoginPage(),
     );
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:jamikapet/src/presentation/pages/auth/login/login_cubit.dart';
+import 'package:jamikapet/src/presentation/pages/auth/register/register_page.dart';
+import 'package:jamikapet/src/presentation/pages/mascotas/registro_mascota.dart';
 import 'package:jamikapet/src/presentation/widgets/app_button.dart';
 import 'package:jamikapet/src/presentation/widgets/app_logo.dart';
 import 'package:jamikapet/src/presentation/widgets/app_password_field.dart';
@@ -26,7 +28,6 @@ class LoginPage extends StatelessWidget {
 // =============================================================
 // CONTENIDO DEL LOGIN
 // =============================================================
-
 class _LoginContent extends StatefulWidget {
   const _LoginContent();
 
@@ -39,7 +40,6 @@ class _LoginContentState extends State<_LoginContent> {
   // ===========================================================
   // CONTROLADORES
   // ===========================================================
-
   final TextEditingController _emailController =
       TextEditingController();
 
@@ -49,7 +49,6 @@ class _LoginContentState extends State<_LoginContent> {
   // ===========================================================
   // DISPOSE
   // ===========================================================
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -61,7 +60,6 @@ class _LoginContentState extends State<_LoginContent> {
   // ===========================================================
   // BUILD
   // ===========================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,51 +210,46 @@ class _LoginContentState extends State<_LoginContent> {
                           // ===========================================
                           // BOTÓN INGRESAR
                           // ===========================================
-
                           AppButton(
-                            text: isLoading
-                                ? 'Cargando...'
-                                : 'Ingresar',
+                            text: isLoading ? 'Cargando...' : 'Ingresar',
 
                             onPressed: isLoading
                                 ? null
                                 : () {
-
-                                    context
-                                        .read<LoginCubit>()
-                                        .login(
-                                          _emailController
-                                              .text,
-                                          _passwordController
-                                              .text,
+                                    context.read<LoginCubit>().login(
+                                          _emailController.text,
+                                          _passwordController.text,
                                         );
+
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const RegistroMascotaScreen(),
+                                      ),
+                                    );
                                   },
                           ),
 
-                          const SizedBox(
-                            height: 15,
-                          ),
+                          const SizedBox(height: 15,),
 
                           // ===========================================
                           // REGRESAR A REGISTRO
                           // ===========================================
-
                           TextButton(
                             onPressed: () {
-
-                              Navigator.pop(
+                              Navigator.push(
                                 context,
+                                MaterialPageRoute(
+                                  builder: (context) => const RegisterPage(),
+                                ),
                               );
                             },
-
                             child: const Text(
                               '¿No tienes cuenta? Regístrate',
-
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 17,
-                                fontWeight:
-                                    FontWeight.w900,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),

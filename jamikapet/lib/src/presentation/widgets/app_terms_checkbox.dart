@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:jamikapet/src/core/constants/app_constants.dart';
 
 class AppTermsCheckbox extends StatelessWidget {
   final bool value;
@@ -11,6 +13,20 @@ class AppTermsCheckbox extends StatelessWidget {
     required this.onChanged,
     this.onTermsTap,
   });
+
+  // ============================================================
+  // ABRIR POLÍTICA DE PRIVACIDAD
+  // ============================================================
+  Future<void> _abrirPoliticaPrivacidad() async {
+    final Uri url = Uri.parse(urlPoliticaPrivacidad);
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +54,7 @@ class AppTermsCheckbox extends StatelessWidget {
               ),
 
               GestureDetector(
-                onTap: onTermsTap,
+                onTap: onTermsTap ?? _abrirPoliticaPrivacidad,
                 child: const Text(
                   'Política de Privacidad, Términos y Condiciones',
                   style: TextStyle(
@@ -56,3 +72,4 @@ class AppTermsCheckbox extends StatelessWidget {
     );
   }
 }
+

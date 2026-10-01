@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-
 import 'package:jamikapet/src/presentation/pages/auth/register/register_bloc_cubit.dart';
 import 'package:jamikapet/src/presentation/widgets/app_text_field.dart';
 import 'package:jamikapet/src/presentation/widgets/app_password_field.dart';
 import 'package:jamikapet/src/presentation/widgets/app_button.dart';
 import 'package:jamikapet/src/presentation/widgets/app_terms_checkbox.dart';
 import 'package:jamikapet/src/presentation/widgets/app_logo.dart';
-import 'package:jamikapet/src/presentation/widgets/terms_modal.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:jamikapet/src/presentation/pages/auth/login/login_page.dart';
 
@@ -191,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
               contentWidth = 650;
             } else {
               // ESCRITORIO / WEB
-              contentWidth = 850;
+              contentWidth = 1000;
             }
 
             return SingleChildScrollView(
@@ -220,7 +218,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   child: Center(
                     child: SizedBox(
-                      width: contentWidth,
+                      //width: contentWidth,
 
                       child: Column(
                         children: [
@@ -346,10 +344,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Expanded(
                                   child: AppPasswordField(
                                     label: 'Confirmar Contraseña:',
-                                    controller:
-                                        confirmarPasswordController,
-                                    onChanged:
-                                        bloc.changeConfirmPassword,
+                                    controller: confirmarPasswordController,
+                                    onChanged: bloc.changeConfirmPassword,
                                   ),
                                 ),
                               ],
@@ -382,20 +378,29 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // TÉRMINOS
                           // ===================================
+                          // AppTermsCheckbox(
+                          //   value: aceptarTerminos,
 
+                          //   onChanged: (value) {
+                          //     setState(() {
+                          //       aceptarTerminos = value ?? false;
+                          //     });
+                          //   },
+
+                          //   onTermsTap: () {
+                          //     TermsModal.show(context);
+                          //   },
+                          // ),
                           AppTermsCheckbox(
                             value: aceptarTerminos,
-
                             onChanged: (value) {
                               setState(() {
-                                aceptarTerminos = value ?? false;
+                                aceptarTerminos = value;
                               });
                             },
-
-                            onTermsTap: () {
-                              TermsModal.show(context);
-                            },
                           ),
+
+
 
                           const SizedBox(height: 18),
 
@@ -412,6 +417,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 isLoading || !formularioValido
                                     ? null
                                     : registrarUsuario,
+                            
                           ),
 
                           const SizedBox(height: 5),
@@ -420,25 +426,36 @@ class _RegisterPageState extends State<RegisterPage> {
                           // INICIAR SESIÓN
                           // ===================================
 
-                          TextButton(
+                          // TextButton(
+                          //   onPressed: () {
+                          //     Navigator.push(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //         builder: (context) =>
+                          //             const LoginPage(),
+                          //       ),
+                          //     );
+                          //   },
+
+                          //   child: const Text(
+                          //     'Iniciar de Sesión',
+                          //     style: TextStyle(
+                          //       color: Colors.black,
+                          //       fontSize: 17,
+                          //       fontWeight: FontWeight.w900,
+                          //     ),
+                          //   ),
+                          // ),
+                          ElevatedButton(
                             onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const LoginPage(),
+                                  builder: (context) => const LoginPage(),
                                 ),
                               );
                             },
-
-                            child: const Text(
-                              'Iniciar de Sesión',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
+                            child: const Text('Iniciar sesión'),
                           ),
 
                           const SizedBox(height: 15),

@@ -150,7 +150,7 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
             ),
             child: ClipOval(
               child: Image.asset(
-                'assets/img/icon_App.jpeg',
+                'assets/icons/icon_App.jpg',
                 width: 34,
                 height: 34,
                 fit: BoxFit.cover,
