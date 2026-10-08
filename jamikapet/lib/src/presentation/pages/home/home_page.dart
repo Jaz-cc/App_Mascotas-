@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
+import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -95,6 +97,28 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+
+              // ===============================================================
+              // PIE DE PÁGINA / BARRA INFERIOR
+              // ===============================================================
+              AppBottomNavigation(
+                currentIndex: 1,
+                onItemSelected: (index) {
+                  switch (index) {
+                    case 0:
+                      Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                      break;
+
+                    case 1:
+                      Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                      break;
+
+                    case 2:
+                      Navigator.pushReplacementNamed(context, AppRoutes.vacunas,);
+                      break;
+                  }
+                },
               ),
             ],
           ),

@@ -184,7 +184,28 @@ class _VacunasScreenState extends State<VacunasScreen> {
                 ),
               ),
             ),
-            AppFooter(),
+            
+            // ===============================================================
+            // PIE DE PÁGINA / BARRA INFERIOR
+            // ===============================================================
+            AppBottomNavigation(
+              currentIndex: 1,
+              onItemSelected: (index) {
+                switch (index) {
+                  case 0:
+                    Navigator.pushReplacementNamed(context, '/home');
+                    break;
+
+                  case 1:
+                    Navigator.pushReplacementNamed(context, '/mascotas');
+                    break;
+
+                  case 2:
+                    Navigator.pushReplacementNamed(context, '/perfil');
+                    break;
+                }
+              },
+            ),
           ],
         ),
       ),

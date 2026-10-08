@@ -1,7 +1,6 @@
+
 import 'package:flutter/material.dart';
-import 'package:jamikapet/src/presentation/pages/auth/login/login_page.dart';
-// import 'package:jamikapet/src/presentation/pages/auth/register/register_page.dart';
-// import 'package:jamikapet/src/presentation/pages/home/home_page.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 
 void main() {
   runApp(const JamikaPetApp());
@@ -16,7 +15,6 @@ class JamikaPetApp extends StatelessWidget {
       title: 'JAMIKA PET',
       debugShowCheckedModeBanner: false,
 
-      // Tema de la aplicación
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF4FC3B8),
@@ -24,9 +22,8 @@ class JamikaPetApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      // Pantalla inicial
-      home: const LoginPage(),
+      initialRoute: AppRoutes.vacunas,
+      routes: AppRoutes.routes,
     );
   }
 }
-
