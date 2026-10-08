@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 
 class VacunasScreen extends StatefulWidget {
   const VacunasScreen({super.key});
@@ -183,7 +184,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
                 ),
               ),
             ),
-            _barraInferior(),
+            AppFooter(),
           ],
         ),
       ),
@@ -601,80 +602,6 @@ class _VacunasScreenState extends State<VacunasScreen> {
     }
   }
 
-  // ===============================================================
-  // BARRA INFERIOR
-  // ===============================================================
-
-  Widget _barraInferior() {
-    return Container(
-      height: 68,
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x140F3D3A),
-            blurRadius: 14,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _itemBarra(icono: Icons.home_outlined, label: "Inicio", activo: false),
-          _itemBarra(icono: Icons.pets, label: "Mascotas", activo: false),
-          _itemBarra(
-              icono: Icons.person_outline, label: "Perfil", activo: false),
-        ],
-      ),
-    );
-  }
-
-  Widget _itemBarra({
-    required IconData icono,
-    required String label,
-    required bool activo,
-  }) {
-    final color = activo ? _Paleta.primarioOscuro : _Paleta.tintaSuave;
-
-    return Semantics(
-      button: true,
-      selected: activo,
-      label: label,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {},
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icono, size: 22, color: color),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: activo ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Container(
-                width: 16,
-                height: 2.5,
-                decoration: BoxDecoration(
-                  color: activo ? _Paleta.primarioOscuro : Colors.transparent,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _EstiloEstado {
@@ -686,7 +613,6 @@ class _EstiloEstado {
 // ================================================================
 // PALETA
 // ================================================================
-
 class _Paleta {
   static const fondo = Color(0xFFE1F5F2);
   static const primario = Color(0xFF55C8BD);
