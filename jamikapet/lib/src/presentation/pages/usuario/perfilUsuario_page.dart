@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
+import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
+import 'package:jamikapet/src/presentation/widgets/app_footer.dart';  
 import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
@@ -9,134 +12,186 @@ class PerfilUsuarioPage extends StatefulWidget {
 }
 
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
-  final int _selectedIndex = 2; // Índice 2 es Perfil
 
-  void _onItemTapped(int index) {
-    if (index == _selectedIndex) return; // Si ya estamos aquí, no hace nada
-
-    if (index == 1) {
-      // Ir al Menú de Salud / Mascota
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MenuPage()),
-      );
-    } else if (index == 0) {
-      // Ir al Inicio (si tienes una pantalla de inicio)
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-    }
+  void cerrarSesion(BuildContext context) {
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   @override
   Widget build(BuildContext context) {
     const primaryBackground = Color(0xFFE2F4F1);
-    const headerColor = Color(0xFFC5ECE5);
     const darkText = Colors.black87;
 
     return Scaffold(
       backgroundColor: primaryBackground,
-      appBar: AppBar(
-        backgroundColor: headerColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: darkText, size: 28),
-          onPressed: () {},
-        ),
+      appBar: const HeaderAppBar(
+        titulo: 'Perfil de usuario',
+        mostrarLogo: true,
+        mostrarRegreso: false,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              Center(
-                child: Container(
-                  width: 110,
-                  height: 110,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF007A8C),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 70,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 35),
-              _buildInfoTile(label: 'Nombre:', value: 'Usuario12'),
-              const SizedBox(height: 16),
-              _buildInfoTile(label: 'Correo:', value: 'usuario12@gmail.com'),
-              const SizedBox(height: 30),
-              const Text(
-                'Mascota:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: darkText,
-                ),
-              ),
-              const SizedBox(height: 12),
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MenuPage(),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: 100,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFB2DFDB)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(12),
+        child: Column(
+          children: [                         
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+
+                    Center(
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF007A8C),
+                          shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.pets,
-                          size: 36,
-                          color: Colors.orangeAccent,
+                          Icons.person,
+                          size: 70,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Perro',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: darkText,
+                    ),
+
+                    const SizedBox(height: 35),
+
+                    _buildInfoTile(label: 'Nombre:', value: 'Usuario12'),
+
+                    const SizedBox(height: 16),
+
+                    _buildInfoTile(label: 'Correo:', value: 'usuario12@gmail.com'),
+
+                    const SizedBox(height: 30),
+
+                    const Text(
+                      'Mascota:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: darkText,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    InkWell(
+                      onTap: () {
+                        Navigator.pushReplacementNamed(context, AppRoutes.menu,);
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: 100,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFB2DFDB)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF3E0),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.pets,
+                                size: 36,
+                                color: Colors.orangeAccent,
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            const Text(
+                              'Perro',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: darkText,
+                              ),
+                            ),         
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ), 
+
+                    const SizedBox(height: 12),
+                    
+                    // ===============================================================
+                    // BOTON CIERRE DE SESIÓN
+                    // ===============================================================
+                    SizedBox(
+                      width: 250,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          cerrarSesion(context);
+                        },
+                        icon: const Icon(
+                          Icons.logout,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'Cerrar sesión',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4FC3B8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                      ),
+                    ),           
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: _buildStandardBottomNavigationBar(),
+            ),
+
+            // ===============================================================
+            // PIE DE PÁGINA / BARRA INFERIOR
+            // ===============================================================
+            AppBottomNavigation(
+              currentIndex: 3,
+              onItemSelected: (index) {
+                switch (index) {
+                  case 0:
+                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                    break;
+
+                  case 1:
+                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
+                    break;
+
+                  case 2:
+                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                    break;
+
+                  case 3:
+                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
+                    break;
+                }
+              },
+            ),
+          ]
+        )
+      )
     );
   }
 
@@ -168,44 +223,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 color: Colors.black87,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStandardBottomNavigationBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFE2F4F1),
-        border: Border(top: BorderSide(color: Color(0xFFB2DFDB), width: 0.5)),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        backgroundColor: const Color(0xFFE2F4F1),
-        selectedItemColor: const Color(0xFF00695C),
-        unselectedItemColor: const Color(0xFF616161),
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        iconSize: 26,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pets),
-            activeIcon: Icon(Icons.pets),
-            label: 'Mascotas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Perfil',
           ),
         ],
       ),

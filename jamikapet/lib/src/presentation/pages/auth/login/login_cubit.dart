@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 // ============================================================
 // ESTADOS
 // ============================================================
-
 abstract class LoginState {}
 
 class LoginInitial extends LoginState {}
@@ -20,7 +19,6 @@ class LoginFailure extends LoginState {
 // ============================================================
 // CUBIT
 // ============================================================
-
 class LoginCubit extends Cubit<LoginState> {
   LoginCubit() : super(LoginInitial());
 
@@ -45,7 +43,6 @@ class LoginCubit extends Cubit<LoginState> {
     // ========================================================
     // ESTADO DE CARGA
     // ========================================================
-
     emit(LoginLoading());
 
     try {
@@ -57,13 +54,11 @@ class LoginCubit extends Cubit<LoginState> {
       // ======================================================
       // LOGIN EXITOSO
       // ======================================================
-
       emit(LoginSuccess());
     } catch (e) {
       // ======================================================
       // ERROR
       // ======================================================
-
       emit(
         LoginFailure(
           errorMessage: e.toString(),
@@ -72,3 +67,4 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 }
+

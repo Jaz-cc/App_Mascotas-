@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
+import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 
 class VacunasScreen extends StatefulWidget {
@@ -89,10 +91,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
   Future<void> _abrirSelectorMascotas() async {
     final elegido = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.white,      
       builder: (context) {
         return SafeArea(
           child: Padding(
@@ -161,6 +160,11 @@ class _VacunasScreenState extends State<VacunasScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _Paleta.fondo,
+      appBar: const HeaderAppBar(
+        titulo: '💉 Vacunas',
+        mostrarLogo: true,
+        mostrarRegreso: true,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -193,15 +197,19 @@ class _VacunasScreenState extends State<VacunasScreen> {
               onItemSelected: (index) {
                 switch (index) {
                   case 0:
-                    Navigator.pushReplacementNamed(context, '/home');
-                    break;
+                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                      break;
 
                   case 1:
-                    Navigator.pushReplacementNamed(context, '/mascotas');
+                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
                     break;
 
                   case 2:
-                    Navigator.pushReplacementNamed(context, '/perfil');
+                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                    break;
+
+                  case 3:
+                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
                     break;
                 }
               },
@@ -215,7 +223,6 @@ class _VacunasScreenState extends State<VacunasScreen> {
   // ===============================================================
   // ENCABEZADO CON LOGO
   // ===============================================================
-
   Widget _encabezadoLogo() {
     return Stack(
       clipBehavior: Clip.none,
@@ -231,31 +238,6 @@ class _VacunasScreenState extends State<VacunasScreen> {
         ),
         Column(
           children: [
-            Row(
-              children: [
-                Semantics(
-                  button: true,
-                  label: "Volver",
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: const BoxDecoration(
-                        color: _Paleta.primarioOscuro,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.chevron_left_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 6),
             Center(
               child: Column(
@@ -311,7 +293,6 @@ class _VacunasScreenState extends State<VacunasScreen> {
   // ===============================================================
   // TARJETA TÍTULO
   // ===============================================================
-
   Widget _tarjetaTitulo() {
     return Container(
       width: double.infinity,
@@ -376,7 +357,6 @@ class _VacunasScreenState extends State<VacunasScreen> {
   // ===============================================================
   // SELECTOR DE MASCOTAS
   // ===============================================================
-
   Widget _selectorMascotas() {
     return Row(
       children: mascotas.map((m) {
@@ -449,7 +429,6 @@ class _VacunasScreenState extends State<VacunasScreen> {
   // ===============================================================
   // ESTADO VACÍO
   // ===============================================================
-
   Widget _estadoVacio() {
     return Container(
       width: double.infinity,
@@ -484,7 +463,6 @@ class _VacunasScreenState extends State<VacunasScreen> {
   // ===============================================================
   // TARJETA DE VACUNA
   // ===============================================================
-
   Widget _tarjetaVacuna(_Vacuna vacuna) {
     final estilo = _estiloEstado(vacuna.estado);
     final mascota =

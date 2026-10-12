@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
+import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
+import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/presentation/pages/medicamento/medicamento_page.dart';
 import 'package:jamikapet/src/presentation/pages/usuario/perfilUsuario_page.dart';
 
@@ -10,144 +13,158 @@ class MenuPage extends StatefulWidget {
 }
 
 class _MenuPageState extends State<MenuPage> {
-  final int _selectedIndex = 1; // Índice 1 es Mascotas / Salud
-
-  void _onItemTapped(int index) {
-    if (index == _selectedIndex) return; // Si ya estamos aquí, no hace nada
-
-    if (index == 2) {
-      // Ir al Perfil de Usuario
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const PerfilUsuarioPage()),
-      );
-    } else if (index == 0) {
-      // Ir al Inicio
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     const primaryBackground = Color(0xFFE2F4F1);
-    const headerColor = Color(0xFFC5ECE5);
     const darkText = Colors.black87;
 
     return Scaffold(
       backgroundColor: primaryBackground,
-      appBar: AppBar(
-        backgroundColor: headerColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: darkText),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          },
-        ),
+      appBar: const HeaderAppBar(
+        titulo: 'Menu',
+        mostrarLogo: true,
+        mostrarRegreso: false,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-          child: Column(
-            children: [
-              Center(
-                child: Container(
-                  width: 140,
-                  height: 120,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(
-                          Icons.shield_outlined,
-                          size: 80,
-                          color: Colors.teal.shade400,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 140,
+                        height: 120,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        const Icon(
-                          Icons.pets,
-                          size: 38,
-                          color: Colors.teal,
+                        child: Center(
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Icon(
+                                Icons.shield_outlined,
+                                size: 80,
+                                color: Colors.teal.shade400,
+                              ),
+                              const Icon(
+                                Icons.pets,
+                                size: 38,
+                                color: Colors.teal,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.pets, size: 28, color: darkText),
+                        SizedBox(width: 8),
+                        Text(
+                          'Salud',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: darkText,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.pets, size: 28, color: darkText),
-                  SizedBox(width: 8),
-                  Text(
-                    'Salud',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: darkText,
+                    
+                    const SizedBox(height: 12),
+
+                    //VACUNAS
+                    _buildMenuOption(
+                      icon: Icons.clean_hands_outlined,
+                      title: 'Vacunas',
+                      onTap: () {
+                        Navigator.pushReplacementNamed(context, AppRoutes.vacunas);
+                      },
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildMenuOption(
-                icon: Icons.assignment_outlined,
-                title: 'Informacion General',
-                onTap: () {},
-              ),
-              const SizedBox(height: 12),
-              _buildMenuOption(
-                icon: Icons.clean_hands_outlined,
-                title: 'Vacunas',
-                onTap: () {},
-              ),
-              const SizedBox(height: 12),
-              _buildMenuOption(
-                icon: Icons.bug_report_outlined,
-                title: 'Desparasitación',
-                onTap: () {},
-              ),
-              const SizedBox(height: 12),
-              _buildMenuOption(
-                icon: Icons.medication_outlined,
-                title: 'Medicamentos',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MedicamentoPage(),
+
+                    const SizedBox(height: 12),
+                    
+                    //DESPARASITACIÓN
+                    _buildMenuOption(
+                      icon: Icons.bug_report_outlined,
+                      title: 'Desparasitación',
+                      onTap: () {
+                        //Navigator.pushReplacementNamed(context, AppRoutes.desparasitacion);
+                      },
                     ),
-                  );
-                },
+
+                    const SizedBox(height: 12),
+
+                    //MEDICAMENTOS 
+                    _buildMenuOption(
+                      icon: Icons.medication_outlined,
+                      title: 'Medicamentos',
+                      onTap: () {
+                        Navigator.pushReplacementNamed(context, AppRoutes.medicamentos);
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _buildMenuOption(
+                      icon: Icons.event_available_outlined,
+                      title: 'Citas Veterinarias',
+                      onTap: () {
+                        //Navigator.pushReplacementNamed(context, AppRoutes.citas);
+                      },
+                    ),
+                    
+                    const SizedBox(height: 20),
+                  
+                  ]
+                )
               ),
-              const SizedBox(height: 12),
-              _buildMenuOption(
-                icon: Icons.event_available_outlined,
-                title: 'Citas Veterinarias',
-                onTap: () {},
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
+            ),
+
+            // ===============================================================
+            // PIE DE PÁGINA / BARRA INFERIOR
+            // ===============================================================
+            AppBottomNavigation(
+              currentIndex: 1,
+              onItemSelected: (index) {
+                switch (index) {
+                  case 0:
+                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                    break;
+
+                  case 1:
+                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
+                    break;
+
+                  case 2:
+                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                    break;
+                  
+                  case 3:
+                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
+                    break;
+                }
+              },
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: _buildStandardBottomNavigationBar(),
     );
   }
 
@@ -209,41 +226,5 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  Widget _buildStandardBottomNavigationBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFE2F4F1),
-        border: Border(top: BorderSide(color: Color(0xFFB2DFDB), width: 0.5)),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        backgroundColor: const Color(0xFFE2F4F1),
-        selectedItemColor: const Color(0xFF00695C),
-        unselectedItemColor: const Color(0xFF616161),
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        iconSize: 26,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pets),
-            activeIcon: Icon(Icons.pets),
-            label: 'Mascotas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
-      ),
-    );
-  }
 }
+
