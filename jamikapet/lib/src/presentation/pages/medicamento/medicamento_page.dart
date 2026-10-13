@@ -23,7 +23,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
     return Scaffold(
       backgroundColor: primaryMint,
       appBar: const HeaderAppBar(
-        titulo: '💊 Medicamentos',
+        titulo: 'Medicamentos',
         mostrarRegreso: true,        
         mostrarLogo: true,
       ),

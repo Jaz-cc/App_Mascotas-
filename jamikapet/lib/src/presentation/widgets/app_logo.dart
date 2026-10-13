@@ -24,7 +24,7 @@ class AppLogo extends StatelessWidget {
       padding: const EdgeInsets.all(12),
 
       child: Image.asset(
-        'assets/icons/icon_App.jpg',
+        'assets/img/LogoApp.jpeg',
         fit: BoxFit.contain,
       ),
     );

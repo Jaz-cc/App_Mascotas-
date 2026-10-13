@@ -36,11 +36,12 @@ class PetProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: _Paleta.fondo,
       appBar: const HeaderAppBar(
-        titulo: 'Información de la mascota',
+        titulo: 'Perfil de la Mascota',
         mostrarLogo: true,
         mostrarRegreso: false,    
       ),
       body: SafeArea(
+        
         child: Column(
           children: [
             Expanded(

@@ -27,7 +27,8 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
 
   final TextEditingController nombreController = TextEditingController();
   final TextEditingController pesoController = TextEditingController();
-  final TextEditingController edadController = TextEditingController();
+  final TextEditingController edadController = TextEditingController();  
+  final TextEditingController razaController = TextEditingController();
 
   String genero = "Macho";
   String tipoMascota = "";
@@ -37,6 +38,7 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
     nombreController.dispose();
     pesoController.dispose();
     edadController.dispose();
+    razaController.dispose();
     super.dispose();
   }
 
@@ -51,7 +53,8 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
     // Aquí posteriormente guardaremos la mascota
     debugPrint("Nombre: ${nombreController.text.trim()}");
     debugPrint("Género: $genero");
-    debugPrint("Tipo: $tipoMascota");
+    debugPrint("Tipo de Mascota: $tipoMascota");
+    debugPrint("Raza: ${razaController.text}");
     debugPrint("Peso: ${pesoController.text} kg");
     debugPrint("Edad: ${edadController.text}");
 

@@ -29,7 +29,7 @@ class AppTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
       onChanged: onChanged,
-
+      
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

@@ -125,18 +125,4 @@ class AppBottomNavigation extends StatelessWidget {
   }
 }
 
-class _Paleta {
-  static const fondo = Color(0xFFE1F5F2);
-  static const primario = Color(0xFF55C8BD);
-  static const primarioOscuro = Color(0xFF1F7A70);
-  static const verdeClaro = Color(0xFFA9DDD8);
-  static const verdeMuyClaro = Color(0xFFD1F0EE);
-  static const borde = Color(0xFFCBE5E2);
-  static const tinta = Color(0xFF16302D);
-  static const tintaSuave = Color(0xFF5C7A77);
-
-  static const aplicada = Color(0xFF2E9E5B);
-  static const proxima = Color(0xFF2E7BC9);
-  static const pendiente = Color(0xFFC94F4F);
-}
 

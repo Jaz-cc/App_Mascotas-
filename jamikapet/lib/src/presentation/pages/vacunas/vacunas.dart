@@ -161,7 +161,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
     return Scaffold(
       backgroundColor: _Paleta.fondo,
       appBar: const HeaderAppBar(
-        titulo: '💉 Vacunas',
+        titulo: 'Vacunas',
         mostrarLogo: true,
         mostrarRegreso: true,
       ),

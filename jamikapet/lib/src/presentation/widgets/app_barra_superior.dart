@@ -1,120 +1,179 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 
 // ===============================================================
-// BARRA SUPERIOR
+// ENCABEZADO REUTILIZABLE DE JAMIKA PET
 // ===============================================================
 class HeaderAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   final String titulo;
+  final String subtitulo;
   final Color colorTexto;
+  final Color colorSubtitulo;
   final Color? colorFondo;
   final double fontSize;
-  final bool centerTitle;
   final bool mostrarRegreso;
   final bool mostrarLogo;
+  final bool mostrarNotificaciones;
+  final int notificacionesPendientes;
 
   const HeaderAppBar({
     super.key,
     this.titulo = '',
-    this.colorTexto = _Paleta.tinta,
-    this.colorFondo = _Paleta.barra,
-    this.fontSize = 20,
-    this.centerTitle = true,
+    this.subtitulo = '',
+    this.colorTexto = _Paleta.primarioOscuro,
+    this.colorSubtitulo = _Paleta.textoSuave,
+    this.colorFondo = _Paleta.fondo,
+    this.fontSize = 23,
     this.mostrarRegreso = false,
     this.mostrarLogo = false,
+    this.mostrarNotificaciones = true,
+    this.notificacionesPendientes = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      toolbarHeight: 52,
-      backgroundColor: colorFondo,
-      elevation: 0,
-      centerTitle: centerTitle,
-      automaticallyImplyLeading: false,
-      //automaticallyImplyLeading: !mostrarRegreso,
-
-      // ---------------------------------------------------------
-      // BOTÓN DE REGRESO
-      // ---------------------------------------------------------
-      leading: mostrarRegreso
-          ? Semantics(
-              button: true,
-              label: 'Volver',
-              child: IconButton(
+    return Container(
+      color: colorFondo,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+        child: Row(
+          children: [
+            // -----------------------------------------------------
+            // BOTÓN DE REGRESO
+            // -----------------------------------------------------
+            if (mostrarRegreso) ...[
+              IconButton(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.arrow_back_rounded),
                 color: colorTexto,
                 tooltip: 'Volver',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  minimumSize: const Size(46, 46),
+                  shape: const CircleBorder(),
+                ),
               ),
-            )
-          : null,
+              const SizedBox(width: 10),
+            ],
 
-      // ---------------------------------------------------------
-      // LOGO CENTRADO
-      // ---------------------------------------------------------
-      actions: mostrarLogo
-          ? [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: SizedBox(
-                  width: 34,
-                  height: 34,
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/img/LogoApp.jpeg',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const ColoredBox(
-                          color: Colors.white,
-                          child: Icon(
-                            Icons.pets,
-                            color: _Paleta.primarioOscuro,
-                            size: 18,
-                          ),
-                        );
-                      },
+            // -----------------------------------------------------
+            // TÍTULO Y SUBTÍTULO
+            // -----------------------------------------------------
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (titulo.isNotEmpty)
+                    Text(
+                      titulo,
+                      style: TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w800,
+                        color: colorTexto,
+                      ),
                     ),
+
+                  if (subtitulo.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitulo,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorSubtitulo,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // -----------------------------------------------------
+            // CAMPANA DE NOTIFICACIONES
+            // -----------------------------------------------------
+            if (mostrarNotificaciones)
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.notificaciones,
+                  );
+                },
+                child: Container(
+                  width: 46,
+                  height: 46,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(
+                        Icons.notifications_none_rounded,
+                        color: colorTexto,
+                        size: 27,
+                      ),
+
+                      if (notificacionesPendientes > 0)
+                        Positioned(
+                          right: 7,
+                          top: 6,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE45C5C),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-            ]
-          : null,
 
-      // ---------------------------------------------------------
-      // TÍTULO
-      // ---------------------------------------------------------
-      title: titulo.isNotEmpty
-          ? Text(
-              titulo,
-              style: TextStyle(
-                color: colorTexto,
-                fontSize: fontSize,
-                fontWeight: FontWeight.bold,
+            // -----------------------------------------------------
+            // LOGO OPCIONAL
+            // -----------------------------------------------------
+            if (mostrarLogo) ...[
+              const SizedBox(width: 10),
+              ClipOval(
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Image.asset(
+                    'assets/icons/icon_App.jpg',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const ColoredBox(
+                        color: Colors.white,
+                        child: Icon(
+                          Icons.pets,
+                          color: _Paleta.primarioOscuro,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-            )
-          : null,
+            ],
+          ],
+        ),
+      ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(52);
+  Size get preferredSize => const Size.fromHeight(86);
 }
 
 // ===============================================================
 // PALETA DE COLORES
 // ===============================================================
 class _Paleta {
-  static const fondo = Color(0xFFE1F5F2);
-  static const barra = Color(0xFFAEDFD9);
+  static const fondo = Color(0xFFF5F9F8);
   static const primarioOscuro = Color(0xFF1F7A70);
-  static const verdeMuyClaro = Color(0xFFD1F0EE);
-  static const campo = Color(0xFFF4FBFA);
-  static const borde = Color(0xFFCBE5E2);
-  static const tinta = Color(0xFF16302D);
-  static const tintaSuave = Color(0xFF5C7A77);
-  static const aplicada = Color(0xFF2E9E5B);
+  static const textoSuave = Color(0xFF78908C);
 }

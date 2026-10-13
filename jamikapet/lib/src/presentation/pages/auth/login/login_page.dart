@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
+import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/presentation/pages/auth/login/login_cubit.dart';
 import 'package:jamikapet/src/presentation/pages/auth/register/register_page.dart';
 import 'package:jamikapet/src/presentation/pages/mascotas/registro_mascota.dart';
@@ -17,7 +19,6 @@ class LoginPage extends StatelessWidget {
     // =========================================================
     // PROVIDER DEL LOGIN
     // =========================================================
-
     return BlocProvider<LoginCubit>(
       create: (context) => LoginCubit(),
       child: const _LoginContent(),
@@ -63,51 +64,32 @@ class _LoginContentState extends State<_LoginContent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      body: SafeArea(
+      backgroundColor: Color(0xFFE0F6F6),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: LayoutBuilder(
           builder: (context, constraints) {
 
-            final double screenWidth =
-                constraints.maxWidth;
+            final double screenWidth = constraints.maxWidth;
 
             return SingleChildScrollView(
               child: Center(
                 child: Container(
 
-                  width: screenWidth >= 1000
-                      ? 850
-                      : double.infinity,
+                  width: screenWidth >= 1000 ? 750 : double.infinity,
 
                   constraints: BoxConstraints(
                     minHeight: constraints.maxHeight,
                   ),
 
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 18,
-                  ),
-
-                  padding: EdgeInsets.symmetric(
-                    horizontal:
-                        screenWidth < 600 ? 18 : 40,
-                    vertical: 25,
-                  ),
-
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE0F6F6),
-                  ),
-
                   // =================================================
                   // BLOC CONSUMER
                   // =================================================
-
                   child: BlocConsumer<LoginCubit, LoginState>(
 
                     // =================================================
                     // LISTENER
                     // =================================================
-
                     listener: (context, state) {
 
                       if (state is LoginSuccess) {
@@ -132,22 +114,18 @@ class _LoginContentState extends State<_LoginContent> {
                     // =================================================
                     // BUILDER
                     // =================================================
-
                     builder: (context, state) {
 
-                      final bool isLoading =
-                          state is LoginLoading;
+                      final bool isLoading = state is LoginLoading;
 
                       return Column(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
 
                         children: [
 
                           // ===========================================
                           // TÍTULO
                           // ===========================================
-
                           const Text(
                             'INICIAR SESIÓN',
 
@@ -159,77 +137,79 @@ class _LoginContentState extends State<_LoginContent> {
                             ),
                           ),
 
-                          const SizedBox(
-                            height: 25,
-                          ),
+                          const SizedBox(height: 25,),
 
                           // ===========================================
                           // LOGO
                           // ===========================================
-
                           const AppLogo(
                             width: 150,
                             height: 150,
                           ),
 
-                          const SizedBox(
-                            height: 25,
-                          ),
+                          const SizedBox(height: 25,),
 
                           // ===========================================
                           // EMAIL
                           // ===========================================
-
                           AppTextField(
                             label: 'E-mail:',
-                            icon: null,
+                            icon: Icons.mail_outlined,
                             keyboardType:
                                 TextInputType.emailAddress,
                             controller:
                                 _emailController,
                           ),
 
-                          const SizedBox(
-                            height: 14,
-                          ),
+                          const SizedBox(height: 14,),
 
                           // ===========================================
                           // CONTRASEÑA
                           // ===========================================
-
                           AppPasswordField(
                             label: 'Contraseña:',
+                            icon: Icons.password_outlined,
                             controller:
                                 _passwordController,
                           ),
 
-                          const SizedBox(
-                            height: 25,
-                          ),
+                          const SizedBox(height: 25,),
 
                           // ===========================================
                           // BOTÓN INGRESAR
                           // ===========================================
-                          AppButton(
-                            text: isLoading ? 'Cargando...' : 'Ingresar',
+                          BlocConsumer<LoginCubit, LoginState>(
+                            listener: (context, state) {
+                              if (state is LoginSuccess) {
+                                Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                              }
 
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    context.read<LoginCubit>().login(
-                                          _emailController.text,
-                                          _passwordController.text,
-                                        );
+                              if (state is LoginFailure) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(state.errorMessage),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            builder: (context, state) {
+                              final isLoading = state is LoginLoading;
 
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const RegistroMascotaScreen(),
-                                      ),
-                                    );
-                                  },
+                              return AppButton(
+                                text: isLoading ? 'Cargando...' : 'Ingresar',
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        context.read<LoginCubit>().login(
+                                              _emailController.text.trim(),
+                                              _passwordController.text,
+                                            );
+                                      },
+                              );
+                            },
                           ),
-
+                          
                           const SizedBox(height: 15,),
 
                           // ===========================================
@@ -237,12 +217,7 @@ class _LoginContentState extends State<_LoginContent> {
                           // ===========================================
                           TextButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const RegisterPage(),
-                                ),
-                              );
+                              Navigator.pushNamed(context, AppRoutes.register);
                             },
                             child: const Text(
                               '¿No tienes cuenta? Regístrate',

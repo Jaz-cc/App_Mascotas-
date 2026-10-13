@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/pages/auth/register/register_bloc_cubit.dart';
 import 'package:jamikapet/src/presentation/widgets/app_text_field.dart';
 import 'package:jamikapet/src/presentation/widgets/app_password_field.dart';
@@ -38,7 +39,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // =========================================================
   // VARIABLES
   // =========================================================
-
   bool aceptarTerminos = false;
   bool formularioValido = false;
   bool isLoading = false;
@@ -46,7 +46,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // =========================================================
   // INIT STATE
   // =========================================================
-
   @override
   void initState() {
     super.initState();
@@ -63,12 +62,10 @@ class _RegisterPageState extends State<RegisterPage> {
   // =========================================================
   // REGISTRO
   // =========================================================
-
   Future<void> registrarUsuario() async {
     // ---------------------------------------------------------
     // TÉRMINOS Y CONDICIONES
     // ---------------------------------------------------------
-
     if (!aceptarTerminos) {
       Fluttertoast.showToast(
         msg: 'Debes aceptar los términos y condiciones',
@@ -81,7 +78,6 @@ class _RegisterPageState extends State<RegisterPage> {
     // ---------------------------------------------------------
     // VALIDACIÓN DEL FORMULARIO
     // ---------------------------------------------------------
-
     if (!formularioValido) {
       Fluttertoast.showToast(
         msg: 'Verifica los datos ingresados',
@@ -94,7 +90,6 @@ class _RegisterPageState extends State<RegisterPage> {
     // ---------------------------------------------------------
     // CARGANDO
     // ---------------------------------------------------------
-
     setState(() {
       isLoading = true;
     });
@@ -103,7 +98,6 @@ class _RegisterPageState extends State<RegisterPage> {
       // -------------------------------------------------------
       // REGISTRO EN EL BLOC
       // -------------------------------------------------------
-
       await bloc.register();
 
       if (!mounted) return;
@@ -114,14 +108,9 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       // -------------------------------------------------------
-      // POSTERIORMENTE:
-      // Navegar al Login
+      // POSTERIORMENTE: Navegar al Login
       // -------------------------------------------------------
-
-      // Navigator.pushReplacementNamed(
-      //   context,
-      //   '/login',
-      // );
+      Navigator.pushReplacementNamed(context, AppRoutes.login,);
 
     } catch (e) {
       if (!mounted) return;
@@ -146,15 +135,12 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     formSubscription?.cancel();
-
     nombreController.dispose();
     apellidoController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmarPasswordController.dispose();
-
     bloc.dispose();
-
     super.dispose();
   }
 
@@ -165,18 +151,18 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      body: SafeArea(
+      backgroundColor:  Color(0xFFE0F6F6),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: LayoutBuilder(
           builder: (
             BuildContext context,
             BoxConstraints constraints,
           ) {
+
             // =================================================
             // RESPONSIVIDAD
             // =================================================
-
             final double screenWidth = constraints.maxWidth;
 
             double contentWidth;
@@ -195,40 +181,23 @@ class _RegisterPageState extends State<RegisterPage> {
             return SingleChildScrollView(
               child: Center(
                 child: Container(
-                  width: screenWidth >= 1000
-                      ? 850
-                      : double.infinity,
-
                   constraints: BoxConstraints(
                     minHeight: constraints.maxHeight,
                   ),
 
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 18,
-                  ),
-
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth < 600 ? 18 : 40,
-                    vertical: 25,
-                  ),
-
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE0F6F6),
-                  ),
-
                   child: Center(
                     child: SizedBox(
-                      //width: contentWidth,
-
                       child: Column(
                         children: [
+                          
+                          const SizedBox(height: 25),
                           // ===================================
                           // TÍTULO
                           // ===================================
-
                           const Text(
                             'REGISTRO DE USUARIO',
                             style: TextStyle(
+                              
                               fontSize: 27,
                               fontWeight: FontWeight.w900,
                               color: Colors.black,
@@ -240,7 +209,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // LOGO
                           // ===================================
-
                           const AppLogo(
                             width: 150,
                             height: 150,
@@ -251,16 +219,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // NOMBRE + APELLIDO
                           // ===================================
-
                           if (screenWidth >= 700)
                             Row(
                               children: [
                                 Expanded(
                                   child: AppTextField(
                                     label: 'Nombre:',
-                                    icon: null,
-                                    textCapitalization:
-                                        TextCapitalization.words,
+                                    icon: Icons.account_circle_outlined,
+                                    textCapitalization: TextCapitalization.words,
                                     controller: nombreController,
                                     onChanged: bloc.changeName,
                                   ),
@@ -271,7 +237,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Expanded(
                                   child: AppTextField(
                                     label: 'Apellido:',
-                                    icon: null,
+                                    icon: Icons.abc_outlined,
                                     textCapitalization:
                                         TextCapitalization.words,
                                     controller: apellidoController,
@@ -285,7 +251,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               children: [
                                 AppTextField(
                                   label: 'Nombre:',
-                                  icon: null,
+                                  icon: Icons.account_circle_outlined,
                                   textCapitalization:
                                       TextCapitalization.words,
                                   controller: nombreController,
@@ -296,7 +262,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                                 AppTextField(
                                   label: 'Apellido:',
-                                  icon: null,
+                                  icon: Icons.abc_outlined,
                                   textCapitalization:
                                       TextCapitalization.words,
                                   controller: apellidoController,
@@ -313,7 +279,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                           AppTextField(
                             label: 'E-mail:',
-                            icon: null,
+                            icon: Icons.email_outlined,
                             keyboardType:
                                 TextInputType.emailAddress,
                             controller: emailController,
@@ -332,10 +298,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Expanded(
                                   child: AppPasswordField(
                                     label: 'Contraseña:',
-                                    controller:
-                                        passwordController,
-                                    onChanged:
-                                        bloc.changePassword,
+                                    controller: passwordController,
+                                    onChanged: bloc.changePassword,
                                   ),
                                 ),
 
@@ -355,20 +319,16 @@ class _RegisterPageState extends State<RegisterPage> {
                               children: [
                                 AppPasswordField(
                                   label: 'Contraseña:',
-                                  controller:
-                                      passwordController,
-                                  onChanged:
-                                      bloc.changePassword,
+                                  controller: passwordController,
+                                  onChanged: bloc.changePassword,
                                 ),
 
                                 const SizedBox(height: 14),
 
                                 AppPasswordField(
                                   label: 'Confirmar Contraseña:',
-                                  controller:
-                                      confirmarPasswordController,
-                                  onChanged:
-                                      bloc.changeConfirmPassword,
+                                  controller: confirmarPasswordController,
+                                  onChanged: bloc.changeConfirmPassword,
                                 ),
                               ],
                             ),
@@ -378,19 +338,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // TÉRMINOS
                           // ===================================
-                          // AppTermsCheckbox(
-                          //   value: aceptarTerminos,
-
-                          //   onChanged: (value) {
-                          //     setState(() {
-                          //       aceptarTerminos = value ?? false;
-                          //     });
-                          //   },
-
-                          //   onTermsTap: () {
-                          //     TermsModal.show(context);
-                          //   },
-                          // ),
                           AppTermsCheckbox(
                             value: aceptarTerminos,
                             onChanged: (value) {
@@ -400,24 +347,19 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
 
-
-
                           const SizedBox(height: 18),
 
                           // ===================================
                           // BOTÓN REGISTRARSE
                           // ===================================
-
                           AppButton(
                             text: isLoading
                                 ? 'Registrando...'
                                 : 'Registrarse',
 
-                            onPressed:
-                                isLoading || !formularioValido
+                            onPressed: isLoading || !formularioValido
                                     ? null
-                                    : registrarUsuario,
-                            
+                                    : registrarUsuario,                            
                           ),
 
                           const SizedBox(height: 5),
@@ -425,37 +367,18 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // INICIAR SESIÓN
                           // ===================================
-
-                          // TextButton(
-                          //   onPressed: () {
-                          //     Navigator.push(
-                          //       context,
-                          //       MaterialPageRoute(
-                          //         builder: (context) =>
-                          //             const LoginPage(),
-                          //       ),
-                          //     );
-                          //   },
-
-                          //   child: const Text(
-                          //     'Iniciar de Sesión',
-                          //     style: TextStyle(
-                          //       color: Colors.black,
-                          //       fontSize: 17,
-                          //       fontWeight: FontWeight.w900,
-                          //     ),
-                          //   ),
-                          // ),
-                          ElevatedButton(
+                          TextButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginPage(),
-                                ),
-                              );
+                              Navigator.pushReplacementNamed(context, AppRoutes.login,);
                             },
-                            child: const Text('Iniciar sesión'),
+                            child: const Text(
+                              'Iniciar de Sesión',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                           ),
 
                           const SizedBox(height: 15),

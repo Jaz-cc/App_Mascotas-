@@ -8,6 +8,7 @@ import 'package:jamikapet/src/presentation/pages/vacunas/vacunas.dart';
 import 'package:jamikapet/src/presentation/pages/usuario/perfilUsuario_page.dart';
 import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
 import 'package:jamikapet/src/presentation/pages/medicamento/medicamento_page.dart';
+import 'package:jamikapet/src/presentation/pages/notificaciones/notificaciones_page.dart';
 
 
 class AppRoutes {
@@ -22,6 +23,7 @@ class AppRoutes {
   static const String medicamentos = '/menu/medicamentos';
   // static const String desparacitacion = '/menu/desparacitantes';  
   // static const String citas = '/menu/citasVeterinarias';
+  static const String notificaciones = '/notificaciones';
 
 
   static Map<String, WidgetBuilder> get routes => {
@@ -36,5 +38,6 @@ class AppRoutes {
     medicamentos: (context) => const MedicamentoPage(),
     // desparacitantes: (context) => const DesparacitantesScreen(),
     // citas: (context) => const CitasMedicasScreen(),
+    notificaciones: (context) => const NotificacionesPage(),
   };
 }
