@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/presentation/routes/app_routes.dart';
+import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
+import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 
 class DewormingPage extends StatefulWidget {
   const DewormingPage({super.key});
@@ -65,10 +68,15 @@ class _DewormingPageState extends State<DewormingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _Paleta.fondo,
+      appBar: const HeaderAppBar(
+        titulo: 'Desparasitación',
+        mostrarLogo: true,
+        mostrarRegreso: true,
+        mostrarNotificaciones: true,
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            _barraSuperior(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -100,7 +108,32 @@ class _DewormingPageState extends State<DewormingPage> {
                 ),
               ),
             ),
-            _barraInferior(),
+
+            // ===============================================================
+            // PIE DE PÁGINA / BARRA INFERIOR
+            // ===============================================================
+            AppBottomNavigation(
+              currentIndex: 1,
+              onItemSelected: (index) {
+                switch (index) {
+                  case 0:
+                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                    break;
+
+                  case 1:
+                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
+                    break;
+
+                  case 2:
+                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                    break;
+                  
+                  case 3:
+                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
+                    break;
+                }
+              },
+            ),
           ],
         ),
       ),
@@ -108,64 +141,8 @@ class _DewormingPageState extends State<DewormingPage> {
   }
 
   // ===============================================================
-  // BARRA SUPERIOR
-  // ===============================================================
-
-  Widget _barraSuperior() {
-    return Container(
-      height: 52,
-      width: double.infinity,
-      color: _Paleta.barra,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          Semantics(
-            button: true,
-            label: 'Volver',
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => Navigator.maybePop(context),
-              child: const Padding(
-                padding: EdgeInsets.all(6),
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _Paleta.tinta,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 34,
-            height: 34,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/img/LogoApp.jpeg',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.pets,
-                  color: _Paleta.primarioOscuro,
-                  size: 18,
-                ),
-              ),
-            ),
-          ),
-          const Spacer(),
-          const SizedBox(width: 32),
-        ],
-      ),
-    );
-  }
-
-  // ===============================================================
   // ENCABEZADO
   // ===============================================================
-
   Widget _tarjetaEncabezado() {
     return Container(
       width: double.infinity,
@@ -484,7 +461,7 @@ class _DewormingPageState extends State<DewormingPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
-                  color: colorEstado.withOpacity(0.12),
+                  color: colorEstado.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -580,83 +557,8 @@ class _DewormingPageState extends State<DewormingPage> {
   }
 
   // ===============================================================
-  // BARRA INFERIOR
-  // ===============================================================
-
-  Widget _barraInferior() {
-    return Container(
-      height: 66,
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x140F3D3A),
-            blurRadius: 14,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _itemBarra(icono: Icons.home_outlined, label: 'Inicio', activo: false),
-          _itemBarra(icono: Icons.favorite, label: 'Salud', activo: true),
-          _itemBarra(icono: Icons.pets, label: 'Mascotas', activo: false)
-        ],
-      ),
-    );
-  }
-
-  Widget _itemBarra({
-    required IconData icono,
-    required String label,
-    required bool activo,
-  }) {
-    final color = activo ? _Paleta.primarioOscuro : _Paleta.tintaSuave;
-
-    return Semantics(
-      button: true,
-      selected: activo,
-      label: label,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {},
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icono, size: 22, color: color),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: activo ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Container(
-                width: 16,
-                height: 2.5,
-                decoration: BoxDecoration(
-                  color: activo ? _Paleta.primarioOscuro : Colors.transparent,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ===============================================================
   // FORMULARIO (DIÁLOGO)
   // ===============================================================
-
   void _mostrarFormulario(BuildContext context) {
     final productoController = TextEditingController();
     DateTime? fechaAplicacion;
@@ -903,7 +805,6 @@ class _DewormingPageState extends State<DewormingPage> {
 
 class _Paleta {
   static const fondo = Color(0xFFE1F5F2);
-  static const barra = Color(0xFFAEDFD9);
   static const primario = Color(0xFF55C8BD);
   static const primarioOscuro = Color(0xFF1F7A70);
   static const verdeMuyClaro = Color(0xFFD1F0EE);

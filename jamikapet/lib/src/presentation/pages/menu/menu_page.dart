@@ -103,7 +103,7 @@ class _MenuPageState extends State<MenuPage> {
                       icon: Icons.bug_report_outlined,
                       title: 'Desparasitación',
                       onTap: () {
-                        //Navigator.pushReplacementNamed(context, AppRoutes.desparasitacion);
+                        Navigator.pushReplacementNamed(context, AppRoutes.desparacitacion);
                       },
                     ),
 
