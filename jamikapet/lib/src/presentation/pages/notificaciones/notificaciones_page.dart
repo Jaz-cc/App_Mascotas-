@@ -163,7 +163,6 @@ class _NotificacionesPageState
           children: [
             HeaderAppBar(
               titulo: 'Notificaciones',
-              subtitulo: 'Recordatorios para su bienestar',
               mostrarRegreso: true,
               mostrarLogo: true,
               mostrarNotificaciones: false,

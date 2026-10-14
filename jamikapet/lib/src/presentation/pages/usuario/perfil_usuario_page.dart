@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';  
-import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   const PerfilUsuarioPage({super.key});
@@ -91,7 +90,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                           border: Border.all(color: const Color(0xFFB2DFDB)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
+                              color: Colors.black.withValues(alpha: 0.03),
                               blurRadius: 6,
                               offset: const Offset(0, 3),
                             ),
@@ -200,7 +199,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
+        color: Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(25),
         border: Border.all(color: const Color(0xFFB2DFDB)),
       ),

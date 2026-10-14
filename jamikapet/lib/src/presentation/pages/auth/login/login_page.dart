@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
-import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/presentation/pages/auth/login/login_cubit.dart';
-import 'package:jamikapet/src/presentation/pages/auth/register/register_page.dart';
-import 'package:jamikapet/src/presentation/pages/mascotas/registro_mascota.dart';
 import 'package:jamikapet/src/presentation/widgets/app_button.dart';
 import 'package:jamikapet/src/presentation/widgets/app_logo.dart';
 import 'package:jamikapet/src/presentation/widgets/app_password_field.dart';
@@ -115,12 +112,8 @@ class _LoginContentState extends State<_LoginContent> {
                     // BUILDER
                     // =================================================
                     builder: (context, state) {
-
-                      final bool isLoading = state is LoginLoading;
-
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-
                         children: [
 
                           // ===========================================

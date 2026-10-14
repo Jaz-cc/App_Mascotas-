@@ -544,7 +544,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: estilo.color.withOpacity(0.12),
+                        color: estilo.color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(

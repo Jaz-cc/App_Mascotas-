@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
-import 'package:jamikapet/src/presentation/pages/medicamento/medicamento_page.dart';
-import 'package:jamikapet/src/presentation/pages/usuario/perfilUsuario_page.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -43,7 +41,7 @@ class _MenuPageState extends State<MenuPage> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -179,12 +177,12 @@ class _MenuPageState extends State<MenuPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.85),
+          color: Colors.white.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: const Color(0xFFB2DFDB)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

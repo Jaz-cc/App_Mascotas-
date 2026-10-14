@@ -8,7 +8,6 @@ import 'package:jamikapet/src/presentation/widgets/app_button.dart';
 import 'package:jamikapet/src/presentation/widgets/app_terms_checkbox.dart';
 import 'package:jamikapet/src/presentation/widgets/app_logo.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:jamikapet/src/presentation/pages/auth/login/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -120,18 +119,22 @@ class _RegisterPageState extends State<RegisterPage> {
         toastLength: Toast.LENGTH_LONG,
       );
     } finally {
-      if (!mounted) return;
 
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      // if (!mounted) return;
+      // setState(() {
+      //   isLoading = false;
+      // });
     }
   }
 
   // =========================================================
   // DISPOSE
   // =========================================================
-
   @override
   void dispose() {
     formSubscription?.cancel();
@@ -165,18 +168,7 @@ class _RegisterPageState extends State<RegisterPage> {
             // =================================================
             final double screenWidth = constraints.maxWidth;
 
-            double contentWidth;
-
-            if (screenWidth < 600) {
-              // CELULAR
-              contentWidth = screenWidth;
-            } else if (screenWidth < 1000) {
-              // TABLET
-              contentWidth = 650;
-            } else {
-              // ESCRITORIO / WEB
-              contentWidth = 1000;
-            }
+            // double contentWidth;
 
             return SingleChildScrollView(
               child: Center(

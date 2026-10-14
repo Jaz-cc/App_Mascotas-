@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
-import 'package:jamikapet/src/presentation/pages/usuario/perfilUsuario_page.dart';
-import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
 
 class MedicamentoPage extends StatefulWidget {
   const MedicamentoPage({super.key});
@@ -17,7 +15,6 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
   @override
   Widget build(BuildContext context) {
     const primaryMint = Color(0xFFE2F4F1);
-    const headerMint = Color(0xFFC5ECE5);
     const darkText = Colors.black87;
 
     return Scaffold(
@@ -35,32 +32,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                 padding: const EdgeInsets.all(18.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Alerta de Notificación
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3CD),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: const Color(0xFFFFEEBA)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Text('💊', style: TextStyle(fontSize: 24)),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Es hora de administrar el medicamento de Luna.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF856404),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  children: [                    
                     const SizedBox(height: 20),
 
                     // Tabla de Horarios
@@ -131,7 +103,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),

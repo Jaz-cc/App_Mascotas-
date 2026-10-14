@@ -217,7 +217,7 @@ class PetProfilePage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: _Paleta.verdeMuyClaro.withOpacity(0.5),
+              color: _Paleta.verdeMuyClaro.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
@@ -415,14 +415,15 @@ class PetProfilePage extends StatelessWidget {
               ],
             ),
           ),
-          if (accion != null) accion,
+          //if (accion != null) accion,
+          ?accion,
         ],
       ),
     );
   }
 
   static Widget _separador() {
-    return Divider(height: 1, color: Colors.white.withOpacity(0.9));
+    return Divider(height: 1, color: Colors.white.withValues(alpha: 0.9));
   }
 }
 
@@ -432,7 +433,6 @@ class PetProfilePage extends StatelessWidget {
 
 class _Paleta {
   static const fondo = Color(0xFFE1F5F2);
-  static const barra = Color(0xFFAEDFD9);
   static const primarioOscuro = Color(0xFF1F7A70);
   static const verdeMuyClaro = Color(0xFFD1F0EE);
   static const campo = Color(0xFFF4FBFA);
