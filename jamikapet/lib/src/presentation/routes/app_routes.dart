@@ -16,7 +16,7 @@ import 'package:jamikapet/src/presentation/pages/desparacitacion/desparacitacion
 class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
-  static const String registroPet = '/mascotas/registro';
+  static const String registroPet = '/perfil/registro_pet';
   static const String home = '/home';
   static const String petProfile = '/mascotas/perfil';
   static const String perfil = '/perfil';

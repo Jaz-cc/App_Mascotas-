@@ -207,7 +207,6 @@ class _DewormingPageState extends State<DewormingPage> {
   // ===============================================================
   // SELECTOR DE MASCOTAS
   // ===============================================================
-
   Widget _selectorMascotas() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,7 +277,6 @@ class _DewormingPageState extends State<DewormingPage> {
   // ===============================================================
   // PRÓXIMA DOSIS
   // ===============================================================
-
   Widget _tarjetaProximaDosis() {
     final tratamiento = _proximoTratamiento!;
     return Semantics(
@@ -369,7 +367,6 @@ class _DewormingPageState extends State<DewormingPage> {
   // ===============================================================
   // ESTADO VACÍO
   // ===============================================================
-
   Widget _estadoVacio() {
     return Container(
       width: double.infinity,
@@ -405,7 +402,6 @@ class _DewormingPageState extends State<DewormingPage> {
   // ===============================================================
   // TARJETA DE TRATAMIENTO
   // ===============================================================
-
   Widget _tarjetaTratamiento(Map<String, String> tratamiento) {
     final pendiente = tratamiento['estado'] == 'Pendiente';
     final colorEstado = pendiente ? _Paleta.pendiente : _Paleta.aplicada;
@@ -532,7 +528,6 @@ class _DewormingPageState extends State<DewormingPage> {
   // ===============================================================
   // BOTÓN REGISTRAR
   // ===============================================================
-
   Widget _botonRegistrar() {
     return SizedBox(
       width: double.infinity,
@@ -812,7 +807,6 @@ class _Paleta {
   static const borde = Color(0xFFCBE5E2);
   static const tinta = Color(0xFF16302D);
   static const tintaSuave = Color(0xFF5C7A77);
-
   static const aplicada = Color(0xFF2E9E5B);
   static const pendiente = Color(0xFFC98A2E);
 }

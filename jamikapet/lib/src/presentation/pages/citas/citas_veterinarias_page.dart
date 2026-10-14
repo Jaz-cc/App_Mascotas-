@@ -117,7 +117,7 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
     return Scaffold(
       backgroundColor: primaryBackground,
       appBar: const HeaderAppBar(
-        titulo: 'Citas Veterinarias',
+        titulo: 'Citas',
         mostrarRegreso: true,        
         mostrarLogo: true,
         mostrarNotificaciones: true,
@@ -130,7 +130,9 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
                 padding: const EdgeInsets.all(18.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: [                    
+                    _tarjetaEncabezado(),
+                    const SizedBox(height: 18),
                     // Seccion: Próxima Cita & Notificaciones
                     const Text(
                       'Próxima Cita',
@@ -306,6 +308,70 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
     );
   }
 
+  // ===============================================================
+  // ENCABEZADO
+  // ===============================================================
+  Widget _tarjetaEncabezado() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x140F3D3A),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              color: _Paleta.verdeMuyClaro,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.medical_information_outlined,
+              color: _Paleta.primarioOscuro,
+              size: 27,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Citas Veterinarias',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: _Paleta.tinta,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Agenda y organiza las citas veterinarias para cuidar la salud de tu mascota.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: _Paleta.tintaSuave,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6.0),
@@ -387,4 +453,11 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
       ),
     );
   }
+}
+
+class _Paleta {
+  static const primarioOscuro = Color(0xFF1F7A70);
+  static const verdeMuyClaro = Color(0xFFD1F0EE);
+  static const tinta = Color(0xFF16302D);
+  static const tintaSuave = Color(0xFF5C7A77);
 }

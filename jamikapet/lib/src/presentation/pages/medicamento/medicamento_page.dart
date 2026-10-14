@@ -33,8 +33,9 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                 padding: const EdgeInsets.all(18.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [                    
-                    const SizedBox(height: 20),
+                  children: [                      
+                    _tarjetaEncabezado(),
+                    const SizedBox(height: 18),  
 
                     // Tabla de Horarios
                     Container(
@@ -257,6 +258,69 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
     );
   }
 
+  // ===============================================================
+  // ENCABEZADO
+  // ===============================================================
+  Widget _tarjetaEncabezado() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x140F3D3A),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              color: _Paleta.verdeMuyClaro,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.medication_outlined,
+              color: _Paleta.primarioOscuro,
+              size: 27,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Medicamentos',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: _Paleta.tinta,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Consulta y administra los medicamentos de tu mascota de forma fácil y organizada.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: _Paleta.tintaSuave,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildRow(String day, String time, {required bool isHighlight}) {
     return Padding(
@@ -303,4 +367,11 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
     );
   }
 
+}
+
+class _Paleta {
+  static const primarioOscuro = Color(0xFF1F7A70);
+  static const verdeMuyClaro = Color(0xFFD1F0EE);
+  static const tinta = Color(0xFF16302D);
+  static const tintaSuave = Color(0xFF5C7A77);
 }
