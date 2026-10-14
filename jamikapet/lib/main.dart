@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
+//import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
+import 'package:jamikapet/src/presentation/pages/citas/citasVeterinarias_page.dart';
 
 void main() {
   runApp(const JamikaPetApp());
@@ -23,7 +24,7 @@ class JamikaPetApp extends StatelessWidget {
       ),
 
       // Pantalla inicial
-      home: const MenuPage(),
+      home: const CitasVeterinariasPage(),
     );
   }
 }
