@@ -76,55 +76,239 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
                     const SizedBox(height: 12),
 
-                    InkWell(
-                      onTap: () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.menu,);
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 100,
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
+                    // InkWell(
+                    //   onTap: () {
+                    //     Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                    //   },
+                    //   borderRadius: BorderRadius.circular(16),
+                    //   child: Container(
+                    //     width: 100,
+                    //     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.white,
+                    //       borderRadius: BorderRadius.circular(16),
+                    //       border: Border.all(color: const Color(0xFFB2DFDB)),
+                    //       boxShadow: [
+                    //         BoxShadow(
+                    //           color: Colors.black.withValues(alpha: 0.03),
+                    //           blurRadius: 6,
+                    //           offset: const Offset(0, 3),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //     child: Column(
+                    //       children: [
+                    //         Container(
+                    //           padding: const EdgeInsets.all(10),
+                    //           decoration: BoxDecoration(
+                    //             color: const Color(0xFFFFF3E0),
+                    //             borderRadius: BorderRadius.circular(12),
+                    //           ),
+                    //           child: const Icon(
+                    //             Icons.pets,
+                    //             size: 36,
+                    //             color: Colors.orangeAccent,
+                    //           ),
+                    //         ),
+
+                    //         const SizedBox(height: 8),
+
+                    //         const Text(
+                    //           'Perro',
+                    //           style: TextStyle(
+                    //             fontSize: 13,
+                    //             fontWeight: FontWeight.w600,
+                    //             color: darkText,
+                    //           ),
+                    //         ),         
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ), 
+
+                    // const SizedBox(height: 12),
+
+                    // InkWell(
+                    //   onTap: () {
+                    //     Navigator.pushReplacementNamed(context, AppRoutes.registroPet,);
+                    //   },
+                    //   borderRadius: BorderRadius.circular(16),
+                    //   child: Container(
+                    //     width: 100,
+                    //     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.white,
+                    //       borderRadius: BorderRadius.circular(16),
+                    //       border: Border.all(color: const Color(0xFFB2DFDB)),
+                    //       boxShadow: [
+                    //         BoxShadow(
+                    //           color: Colors.black.withValues(alpha: 0.03),
+                    //           blurRadius: 6,
+                    //           offset: const Offset(0, 3),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //     child: Column(
+                    //       children: [
+                    //         Container(
+                    //           padding: const EdgeInsets.all(10),
+                    //           decoration: BoxDecoration(
+                    //             color: const Color.fromARGB(255, 224, 242, 255),
+                    //             borderRadius: BorderRadius.circular(12),
+                    //           ),
+                    //           child: const Icon(
+                    //             Icons.add,
+                    //             size: 36,
+                    //             color: Colors.blueAccent,
+                    //           ),
+                    //         ),
+
+                    //         const SizedBox(height: 8),
+
+                    //         const Text(
+                    //           'Agregar Mascota',
+                    //           style: TextStyle(
+                    //             fontSize: 13,
+                    //             fontWeight: FontWeight.w600,
+                    //             color: darkText,
+                    //           ),
+                    //         ),         
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ), 
+
+                    
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final bool isSmallScreen = constraints.maxWidth < 240;
+
+                        final perroCard = InkWell(
+                          onTap: () {
+                            Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                          },
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFB2DFDB)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
+                          child: Container(
+                            width: 100,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 10,
                             ),
-                          ],
-                        ),
-                        child: Column(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFB2DFDB),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF3E0),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.pets,
+                                    size: 36,
+                                    color: Colors.orangeAccent,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Perro',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: darkText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+
+                        final agregarCard = InkWell(
+                          onTap: () {
+                            Navigator.pushReplacementNamed(context, AppRoutes.registroPet,);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: 100,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFB2DFDB),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(255, 224, 242, 255),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.add,
+                                    size: 36,
+                                    color: Colors.blueAccent,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Agregar',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: darkText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+
+                        return Flex(
+                          direction: isSmallScreen
+                              ? Axis.vertical
+                              : Axis.horizontal,
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF3E0),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.pets,
-                                size: 36,
-                                color: Colors.orangeAccent,
-                              ),
+                            perroCard,
+                            SizedBox(
+                              width: isSmallScreen ? 0 : 12,
+                              height: isSmallScreen ? 12 : 0,
                             ),
-
-                            const SizedBox(height: 8),
-
-                            const Text(
-                              'Perro',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: darkText,
-                              ),
-                            ),         
+                            agregarCard,
                           ],
-                        ),
-                      ),
-                    ), 
+                        );
+                      },
+                    ),
 
                     const SizedBox(height: 12),
                     

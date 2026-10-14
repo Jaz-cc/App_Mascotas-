@@ -23,6 +23,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
         titulo: 'Medicamentos',
         mostrarRegreso: true,        
         mostrarLogo: true,
+        mostrarNotificaciones: true,
       ),
       body: SafeArea(
         child: Column(

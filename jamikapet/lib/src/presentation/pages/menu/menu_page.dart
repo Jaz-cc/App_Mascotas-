@@ -120,11 +120,12 @@ class _MenuPageState extends State<MenuPage> {
 
                     const SizedBox(height: 12),
 
+                    //CITAS VETERINARIAS
                     _buildMenuOption(
                       icon: Icons.event_available_outlined,
                       title: 'Citas Veterinarias',
                       onTap: () {
-                        //Navigator.pushReplacementNamed(context, AppRoutes.citas);
+                        Navigator.pushReplacementNamed(context, AppRoutes.citas);
                       },
                     ),
                     

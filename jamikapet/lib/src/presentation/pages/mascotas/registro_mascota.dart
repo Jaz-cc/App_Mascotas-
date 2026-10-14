@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 
 /// Paleta de la pantalla
 class _Paleta {
   static const fondo = Color(0xFFE6F6F5);
-  static const barra = Color(0xFFAEDFD9);
   static const primario = Color(0xFF55C8BD);
   static const primarioOscuro = Color(0xFF23786F);
   static const tinta = Color(0xFF1B3634);
@@ -131,37 +131,12 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
         backgroundColor: _Paleta.fondo,
 
         // ---------------- BARRA SUPERIOR ----------------
-        appBar: AppBar(
-          backgroundColor: _Paleta.barra,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          leading: IconButton(
-            tooltip: "Volver",
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: _Paleta.tinta,
-              size: 22,
-            ),
-          ),
-          title: Container(
-            width: 34,
-            height: 34,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/icons/icon_App.jpg',
-                width: 34,
-                height: 34,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-        ),
-
+        appBar: const HeaderAppBar(
+        titulo: 'Registro Mascota',
+        mostrarRegreso: true,        
+        mostrarLogo: true,
+        mostrarNotificaciones: true,
+      ),
         // ---------------- CONTENIDO ----------------
         body: SafeArea(
           child: SingleChildScrollView(
@@ -170,22 +145,7 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // TÍTULO
-                const Text(
-                  "Registro de la mascota",
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: _Paleta.tinta,
-                    height: 1.15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  "",
-                  style: TextStyle(fontSize: 15, color: _Paleta.tintaSuave),
-                ),
-
+                //const SizedBox(height: 6),
                 const SizedBox(height: 20),
 
                 // TARJETA DEL FORMULARIO
@@ -279,6 +239,28 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
                                   ),
                               ],
                             );
+                          },
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // ---------------- RAZA ----------------
+                        _etiqueta("Raza de tu mascota"),
+                        TextFormField(
+                          controller: razaController,
+                          textCapitalization: TextCapitalization.words,
+                          textInputAction: TextInputAction.next,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: _Paleta.tinta,
+                          ),
+                          decoration: _decoracion(),
+                          validator: (valor) {
+                            if (valor == null || valor.trim().isEmpty) {
+                              return "Escribe la raza de tu mascota";
+                            }
+                            return null;
                           },
                         ),
 
