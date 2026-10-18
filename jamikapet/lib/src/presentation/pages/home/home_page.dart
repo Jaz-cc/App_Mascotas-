@@ -29,10 +29,9 @@ class HomePage extends StatelessWidget {
                     // ===========================================
                     // LOGO
                     // ===========================================
-
                     const AppLogo(
-                      width: 150,
-                      height: 150,
+                      width: 250,
+                      height: 250,
                     ),
 
                     const SizedBox(
@@ -77,19 +76,19 @@ class HomePage extends StatelessWidget {
               onItemSelected: (index) {
                 switch (index) {
                   case 0:
-                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                    Navigator.pushNamed(context, AppRoutes.home,);
                     break;
 
                   case 1:
-                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
+                    Navigator.pushNamed(context, AppRoutes.menu,);
                     break;
 
                   case 2:
-                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                    Navigator.pushNamed(context, AppRoutes.petProfile,);
                     break;
                   
                   case 3:
-                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
+                    Navigator.pushNamed(context, AppRoutes.perfil,);
                     break;
                 }
               },

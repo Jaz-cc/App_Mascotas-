@@ -158,17 +158,17 @@ class _NotificacionesPageState
 
     return Scaffold(
       backgroundColor: _Colores.fondo,
-      body: SafeArea(
-        child: Column(
-          children: [
-            HeaderAppBar(
-              titulo: 'Notificaciones',
-              mostrarRegreso: true,
-              mostrarLogo: true,
-              mostrarNotificaciones: false,
-              notificacionesPendientes: _pendientes,
-            ),
-            Expanded(
+      appBar: const HeaderAppBar(
+        titulo: 'Notificaciones',
+        mostrarRegreso: true,
+        mostrarLogo: true,
+        mostrarNotificaciones: false,
+      ),
+      body: Column(
+        children: [
+          // Contenido de la pantalla
+          Expanded(
+            child: SafeArea(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(
                   20, 8, 20, 24,
@@ -208,8 +208,8 @@ class _NotificacionesPageState
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

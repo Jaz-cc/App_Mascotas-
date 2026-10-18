@@ -23,10 +23,11 @@ class _MenuPageState extends State<MenuPage> {
         mostrarLogo: true,
         mostrarRegreso: false,
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
+      body: Column(
+        children: [
+          // Contenido de la pantalla
+          Expanded(
+            child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                 child: Column(
@@ -92,7 +93,7 @@ class _MenuPageState extends State<MenuPage> {
                       icon: Icons.clean_hands_outlined,
                       title: 'Vacunas',
                       onTap: () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.vacunas);
+                        Navigator.pushNamed(context, AppRoutes.vacunas);
                       },
                     ),
 
@@ -103,7 +104,7 @@ class _MenuPageState extends State<MenuPage> {
                       icon: Icons.bug_report_outlined,
                       title: 'Desparasitación',
                       onTap: () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.desparacitacion);
+                        Navigator.pushNamed(context, AppRoutes.desparacitacion);
                       },
                     ),
 
@@ -114,7 +115,7 @@ class _MenuPageState extends State<MenuPage> {
                       icon: Icons.medication_outlined,
                       title: 'Medicamentos',
                       onTap: () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.medicamentos);
+                        Navigator.pushNamed(context, AppRoutes.medicamentos);
                       },
                     ),
 
@@ -125,7 +126,7 @@ class _MenuPageState extends State<MenuPage> {
                       icon: Icons.event_available_outlined,
                       title: 'Citas Veterinarias',
                       onTap: () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.citas);
+                        Navigator.pushNamed(context, AppRoutes.citas);
                       },
                     ),
                     
@@ -135,34 +136,34 @@ class _MenuPageState extends State<MenuPage> {
                 )
               ),
             ),
+          ),
 
-            // ===============================================================
-            // PIE DE PÁGINA / BARRA INFERIOR
-            // ===============================================================
-            AppBottomNavigation(
-              currentIndex: 1,
-              onItemSelected: (index) {
-                switch (index) {
-                  case 0:
-                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
-                    break;
+          // ===============================================================
+          // PIE DE PÁGINA / BARRA INFERIOR
+          // ===============================================================
+          AppBottomNavigation(
+            currentIndex: 1,
+            onItemSelected: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushNamed(context, AppRoutes.home,);
+                  break;
 
-                  case 1:
-                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
-                    break;
+                case 1:
+                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  break;
 
-                  case 2:
-                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
-                    break;
-                  
-                  case 3:
-                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
-                    break;
-                }
-              },
-            ),
-          ],
-        ),
+                case 2:
+                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  break;
+                
+                case 3:
+                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  break;
+              }
+            },
+          ),
+        ],
       ),
     );
   }

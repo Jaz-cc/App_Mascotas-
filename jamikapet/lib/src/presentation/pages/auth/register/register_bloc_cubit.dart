@@ -4,7 +4,6 @@ class RegisterBlocCubit {
   // ============================================================
   // CONTROLLERS
   // ============================================================
-
   final StreamController<String> _nameController =
       StreamController<String>.broadcast();
 
@@ -26,7 +25,6 @@ class RegisterBlocCubit {
   // ============================================================
   // VALORES
   // ============================================================
-
   String _name = '';
   String _lastname = '';
   String _email = '';
@@ -36,7 +34,6 @@ class RegisterBlocCubit {
   // ============================================================
   // STREAMS
   // ============================================================
-
   Stream<String> get nameStream => _nameController.stream;
 
   Stream<String> get lastnameStream => _lastnameController.stream;
@@ -53,7 +50,6 @@ class RegisterBlocCubit {
   // ============================================================
   // NOMBRE
   // ============================================================
-
   void changeName(String value) {
     _name = value.trim();
 
@@ -71,7 +67,6 @@ class RegisterBlocCubit {
   // ============================================================
   // APELLIDO
   // ============================================================
-
   void changeLastname(String value) {
     _lastname = value.trim();
 
@@ -89,7 +84,6 @@ class RegisterBlocCubit {
   // ============================================================
   // EMAIL
   // ============================================================
-
   void changeEmail(String value) {
     _email = value.trim();
 
@@ -107,7 +101,6 @@ class RegisterBlocCubit {
   // ============================================================
   // CONTRASEÑA
   // ============================================================
-
   void changePassword(String value) {
     _password = value;
 
@@ -139,7 +132,6 @@ class RegisterBlocCubit {
   // ============================================================
   // CONFIRMAR CONTRASEÑA
   // ============================================================
-
   void changeConfirmPassword(String value) {
     _confirmPassword = value;
 
@@ -160,7 +152,6 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR NOMBRE
   // ============================================================
-
   String? _validateName(String value) {
     if (value.isEmpty) {
       return 'El nombre es obligatorio';
@@ -188,7 +179,6 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR APELLIDO
   // ============================================================
-
   String? _validateLastname(String value) {
     if (value.isEmpty) {
       return 'El apellido es obligatorio';
@@ -216,7 +206,6 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR EMAIL
   // ============================================================
-
   String? _validateEmail(String value) {
     if (value.isEmpty) {
       return 'El correo electrónico es obligatorio';
@@ -236,7 +225,6 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR CONTRASEÑA
   // ============================================================
-
   String? _validatePassword(String value) {
     if (value.isEmpty) {
       return 'La contraseña es obligatoria';
@@ -264,7 +252,6 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR CONFIRMACIÓN
   // ============================================================
-
   String? _validateConfirmPassword(
     String password,
     String confirmPassword,
@@ -283,7 +270,6 @@ class RegisterBlocCubit {
   // ============================================================
   // VALIDAR FORMULARIO COMPLETO
   // ============================================================
-
   void _validateForm() {
     final validName = _validateName(_name) == null;
     final validLastname = _validateLastname(_lastname) == null;
@@ -310,7 +296,6 @@ class RegisterBlocCubit {
   // ============================================================
   // REGISTRO
   // ============================================================
-
   Future<void> register() async {
     // Validación final antes de registrar.
 
@@ -333,7 +318,6 @@ class RegisterBlocCubit {
   // ============================================================
   // OBTENER DATOS DEL FORMULARIO
   // ============================================================
-
   Map<String, dynamic> get registerData {
     return {
       'nombre': _name,
@@ -346,7 +330,6 @@ class RegisterBlocCubit {
   // ============================================================
   // DISPOSE
   // ============================================================
-
   void dispose() {
     _nameController.close();
     _lastnameController.close();

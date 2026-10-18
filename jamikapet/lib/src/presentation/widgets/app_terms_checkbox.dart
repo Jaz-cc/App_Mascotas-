@@ -17,14 +17,43 @@ class AppTermsCheckbox extends StatelessWidget {
   // ============================================================
   // ABRIR POLÍTICA DE PRIVACIDAD
   // ============================================================
-  Future<void> _abrirPoliticaPrivacidad() async {
+  Future<void> _abrirPoliticaPrivacidad(
+    BuildContext context,
+  ) async {
     final Uri url = Uri.parse(urlPoliticaPrivacidad);
 
-    if (await canLaunchUrl(url)) {
-      await launchUrl(
+    if (!url.hasScheme ||
+        (url.scheme != 'https' && url.scheme != 'http') ||
+        url.host.isEmpty) {
+      debugPrint('URL de política de privacidad inválida: $url');
+      return;
+    }
+
+    try {
+      final bool abierto = await launchUrl(
         url,
         mode: LaunchMode.externalApplication,
       );
+
+      if (!abierto && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo abrir la política de privacidad.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error al abrir la política: $e');
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al abrir el enlace.'),
+          ),
+        );
+      }
     }
   }
 
@@ -54,7 +83,8 @@ class AppTermsCheckbox extends StatelessWidget {
               ),
 
               GestureDetector(
-                onTap: onTermsTap ?? _abrirPoliticaPrivacidad,
+                onTap: onTermsTap ??
+                    () => _abrirPoliticaPrivacidad(context),
                 child: const Text(
                   'Política de Privacidad, Términos y Condiciones',
                   style: TextStyle(

@@ -25,10 +25,11 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
         mostrarLogo: true,
         mostrarNotificaciones: true,
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
+      body: Column(
+        children: [
+          // Contenido de la pantalla
+          Expanded(
+            child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(18.0),
                 child: Column(
@@ -226,34 +227,34 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                 ),
               ),
             ),
+          ),
 
-            // ===============================================================
-            // PIE DE PÁGINA / BARRA INFERIOR
-            // ===============================================================
-            AppBottomNavigation(
-              currentIndex: 1,
-              onItemSelected: (index) {
-                switch (index) {
-                  case 0:
-                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
-                    break;
+          // ===============================================================
+          // PIE DE PÁGINA / BARRA INFERIOR
+          // ===============================================================
+          AppBottomNavigation(
+            currentIndex: 1,
+            onItemSelected: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushNamed(context, AppRoutes.home,);
+                  break;
 
-                  case 1:
-                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
-                    break;
+                case 1:
+                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  break;
 
-                  case 2:
-                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
-                    break;
-                  
-                  case 3:
-                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
-                    break;
-                }
-              },
-            ),
-          ]
-        )
+                case 2:
+                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  break;
+                
+                case 3:
+                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  break;
+              }
+            },
+          ),
+        ]
       )
     );
   }

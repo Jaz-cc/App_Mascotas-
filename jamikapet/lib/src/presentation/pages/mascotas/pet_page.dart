@@ -40,11 +40,11 @@ class PetProfilePage extends StatelessWidget {
         mostrarLogo: true,
         mostrarRegreso: false,    
       ),
-      body: SafeArea(
-        
-        child: Column(
-          children: [
-            Expanded(
+      body: Column(
+        children: [
+          // Contenido de la pantalla
+          Expanded(
+            child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
                 child: Column(
@@ -56,34 +56,34 @@ class PetProfilePage extends StatelessWidget {
                 ),
               ),
             ),
+          ),
 
-            // ===============================================================
-            // PIE DE PÁGINA / BARRA INFERIOR
-            // ===============================================================
-            AppBottomNavigation(
-              currentIndex: 2,
-              onItemSelected: (index) {
-                switch (index) {
-                  case 0:
-                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
-                    break;
+          // ===============================================================
+          // PIE DE PÁGINA / BARRA INFERIOR
+          // ===============================================================
+          AppBottomNavigation(
+            currentIndex: 2,
+            onItemSelected: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushNamed(context, AppRoutes.home,);
+                  break;
 
-                  case 1:
-                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
-                    break;
+                case 1:
+                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  break;
 
-                  case 2:
-                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
-                    break;
-                  
-                  case 3:
-                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
-                    break;
-                }
-              },
-            ),
-          ],
-        ),
+                case 2:
+                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  break;
+                
+                case 3:
+                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  break;
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -430,7 +430,6 @@ class PetProfilePage extends StatelessWidget {
 // ================================================================
 // PALETA
 // ================================================================
-
 class _Paleta {
   static const fondo = Color(0xFFE1F5F2);
   static const primarioOscuro = Color(0xFF1F7A70);

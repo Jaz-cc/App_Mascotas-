@@ -82,7 +82,6 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
   }
 
   // ---------------- ESTILOS ----------------
-
   InputDecoration _decoracion({String? sufijo, Widget? suffixIcon}) {
     OutlineInputBorder borde(Color color, [double ancho = 1]) {
       return OutlineInputBorder(
@@ -129,257 +128,263 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: _Paleta.fondo,
-
         // ---------------- BARRA SUPERIOR ----------------
         appBar: const HeaderAppBar(
-        titulo: 'Registro Mascota',
-        mostrarRegreso: true,        
-        mostrarLogo: true,
-        mostrarNotificaciones: true,
-      ),
+          titulo: 'Registro Mascota',
+          mostrarRegreso: true,        
+          mostrarLogo: true,
+          mostrarNotificaciones: true,
+        ),
         // ---------------- CONTENIDO ----------------
-        body: SafeArea(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                //const SizedBox(height: 6),
-                const SizedBox(height: 20),
+        body: Column(
+          children: [
+            // Contenido de la pantalla
+            Expanded(
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      //const SizedBox(height: 6),
+                      const SizedBox(height: 20),
 
-                // TARJETA DEL FORMULARIO
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x140F3D3A),
-                        blurRadius: 24,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ---------------- NOMBRE ----------------
-                        _etiqueta("¿Cómo se llama tu mascota?"),
-                        TextFormField(
-                          controller: nombreController,
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: TextInputAction.next,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: _Paleta.tinta,
-                          ),
-                          decoration: _decoracion(),
-                          validator: (valor) {
-                            if (valor == null || valor.trim().isEmpty) {
-                              return "Escribe el nombre de tu mascota";
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 22),
-
-                        // ---------------- TIPO ----------------
-                        _etiqueta("Tipo de mascota"),
-                        FormField<String>(
-                          initialValue: tipoMascota,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          validator: (_) =>
-                              tipoMascota.isEmpty ? "Elige perro o gato" : null,
-                          builder: (state) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _tarjetaMascota(
-                                        tipo: "Perro",
-                                        emoji: "🐶",
-                                        onTap: () {
-                                          setState(() => tipoMascota = "Perro");
-                                          state.didChange("Perro");
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: _tarjetaMascota(
-                                        tipo: "Gato",
-                                        emoji: "🐱",
-                                        onTap: () {
-                                          setState(() => tipoMascota = "Gato");
-                                          state.didChange("Gato");
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (state.hasError)
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: 8, left: 4),
-                                    child: Text(
-                                      state.errorText!,
-                                      style: const TextStyle(
-                                        color: _Paleta.error,
-                                        fontSize: 12.5,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 22),
-
-                        // ---------------- RAZA ----------------
-                        _etiqueta("Raza de tu mascota"),
-                        TextFormField(
-                          controller: razaController,
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: TextInputAction.next,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: _Paleta.tinta,
-                          ),
-                          decoration: _decoracion(),
-                          validator: (valor) {
-                            if (valor == null || valor.trim().isEmpty) {
-                              return "Escribe la raza de tu mascota";
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 22),
-
-                        // ---------------- GÉNERO ----------------
-                        _etiqueta("Género"),
-                        _selectorGenero(),
-
-                        const SizedBox(height: 22),
-                        // ---------------- EDAD Y PESO ----------------
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _etiqueta("Edad"),
-                                  TextFormField(
-                                    controller: edadController,
-                                    keyboardType: TextInputType.number,
-                                    textInputAction: TextInputAction.next,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                      LengthLimitingTextInputFormatter(2),
-                                    ],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: _Paleta.tinta,
-                                    ),
-                                    decoration: _decoracion(sufijo: "años"),
-                                    validator: (valor) {
-                                      if (valor == null || valor.isEmpty) {
-                                        return "Indica la edad";
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _etiqueta("Peso"),
-                                  TextFormField(
-                                    controller: pesoController,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                    textInputAction: TextInputAction.done,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(
-                                        RegExp(r'^\d{0,3}[.,]?\d{0,2}'),
-                                      ),
-                                    ],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: _Paleta.tinta,
-                                    ),
-                                    decoration: _decoracion(sufijo: "kg"),
-                                    validator: (valor) {
-                                      final peso = double.tryParse(
-                                        (valor ?? "").replaceAll(",", "."),
-                                      );
-                                      if (peso == null || peso <= 0) {
-                                        return "Indica el peso";
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
-                              ),
+                      // TARJETA DEL FORMULARIO
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x140F3D3A),
+                              blurRadius: 24,
+                              offset: Offset(0, 8),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 28),
-
-                        // ---------------- REGISTRAR ----------------
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            onPressed: registrarMascota,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _Paleta.primario,
-                              foregroundColor: _Paleta.tinta,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ---------------- NOMBRE ----------------
+                              _etiqueta("¿Cómo se llama tu mascota?"),
+                              TextFormField(
+                                controller: nombreController,
+                                textCapitalization: TextCapitalization.words,
+                                textInputAction: TextInputAction.next,
+                                autovalidateMode: AutovalidateMode.onUserInteraction,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: _Paleta.tinta,
+                                ),
+                                decoration: _decoracion(),
+                                validator: (valor) {
+                                  if (valor == null || valor.trim().isEmpty) {
+                                    return "Escribe el nombre de tu mascota";
+                                  }
+                                  return null;
+                                },
                               ),
-                            ),
-                            child: const Text(
-                              "Registrar mascota",
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
+
+                              const SizedBox(height: 22),
+
+                              // ---------------- TIPO ----------------
+                              _etiqueta("Tipo de mascota"),
+                              FormField<String>(
+                                initialValue: tipoMascota,
+                                autovalidateMode: AutovalidateMode.onUserInteraction,
+                                validator: (_) =>
+                                    tipoMascota.isEmpty ? "Elige perro o gato" : null,
+                                builder: (state) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _tarjetaMascota(
+                                              tipo: "Perro",
+                                              emoji: "🐶",
+                                              onTap: () {
+                                                setState(() => tipoMascota = "Perro");
+                                                state.didChange("Perro");
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(width: 14),
+                                          Expanded(
+                                            child: _tarjetaMascota(
+                                              tipo: "Gato",
+                                              emoji: "🐱",
+                                              onTap: () {
+                                                setState(() => tipoMascota = "Gato");
+                                                state.didChange("Gato");
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (state.hasError)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 8, left: 4),
+                                          child: Text(
+                                            state.errorText!,
+                                            style: const TextStyle(
+                                              color: _Paleta.error,
+                                              fontSize: 12.5,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
                               ),
-                            ),
+
+                              const SizedBox(height: 22),
+
+                              // ---------------- RAZA ----------------
+                              _etiqueta("Raza de tu mascota"),
+                              TextFormField(
+                                controller: razaController,
+                                textCapitalization: TextCapitalization.words,
+                                textInputAction: TextInputAction.next,
+                                autovalidateMode: AutovalidateMode.onUserInteraction,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: _Paleta.tinta,
+                                ),
+                                decoration: _decoracion(),
+                                validator: (valor) {
+                                  if (valor == null || valor.trim().isEmpty) {
+                                    return "Escribe la raza de tu mascota";
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 22),
+
+                              // ---------------- GÉNERO ----------------
+                              _etiqueta("Género"),
+                              _selectorGenero(),
+
+                              const SizedBox(height: 22),
+                              // ---------------- EDAD Y PESO ----------------
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _etiqueta("Edad"),
+                                        TextFormField(
+                                          controller: edadController,
+                                          keyboardType: TextInputType.number,
+                                          textInputAction: TextInputAction.next,
+                                          autovalidateMode:
+                                              AutovalidateMode.onUserInteraction,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.digitsOnly,
+                                            LengthLimitingTextInputFormatter(2),
+                                          ],
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: _Paleta.tinta,
+                                          ),
+                                          decoration: _decoracion(sufijo: "años"),
+                                          validator: (valor) {
+                                            if (valor == null || valor.isEmpty) {
+                                              return "Indica la edad";
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _etiqueta("Peso"),
+                                        TextFormField(
+                                          controller: pesoController,
+                                          keyboardType:
+                                              const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
+                                          textInputAction: TextInputAction.done,
+                                          autovalidateMode:
+                                              AutovalidateMode.onUserInteraction,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.allow(
+                                              RegExp(r'^\d{0,3}[.,]?\d{0,2}'),
+                                            ),
+                                          ],
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: _Paleta.tinta,
+                                          ),
+                                          decoration: _decoracion(sufijo: "kg"),
+                                          validator: (valor) {
+                                            final peso = double.tryParse(
+                                              (valor ?? "").replaceAll(",", "."),
+                                            );
+                                            if (peso == null || peso <= 0) {
+                                              return "Indica el peso";
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 28),
+
+                              // ---------------- REGISTRAR ----------------
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: ElevatedButton(
+                                  onPressed: registrarMascota,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _Paleta.primario,
+                                    foregroundColor: _Paleta.tinta,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Registrar mascota",
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              )
             ),
-          ),
+          ]
         ),
-      ),
+      )
     );
   }
 

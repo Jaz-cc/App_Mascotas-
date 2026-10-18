@@ -20,7 +20,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // =========================================================
   // BLOC
   // =========================================================
-
   final RegisterBlocCubit bloc = RegisterBlocCubit();
 
   StreamSubscription<bool>? formSubscription;
@@ -28,7 +27,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // =========================================================
   // CONTROLADORES
   // =========================================================
-
   final nombreController = TextEditingController();
   final apellidoController = TextEditingController();
   final emailController = TextEditingController();
@@ -109,7 +107,7 @@ class _RegisterPageState extends State<RegisterPage> {
       // -------------------------------------------------------
       // POSTERIORMENTE: Navegar al Login
       // -------------------------------------------------------
-      Navigator.pushReplacementNamed(context, AppRoutes.login,);
+      Navigator.pushNamed(context, AppRoutes.login,);
 
     } catch (e) {
       if (!mounted) return;
@@ -125,10 +123,6 @@ class _RegisterPageState extends State<RegisterPage> {
           isLoading = false;
         });
       }
-      // if (!mounted) return;
-      // setState(() {
-      //   isLoading = false;
-      // });
     }
   }
 
@@ -150,7 +144,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // =========================================================
   // BUILD
   // =========================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,8 +160,6 @@ class _RegisterPageState extends State<RegisterPage> {
             // RESPONSIVIDAD
             // =================================================
             final double screenWidth = constraints.maxWidth;
-
-            // double contentWidth;
 
             return SingleChildScrollView(
               child: Center(
@@ -268,7 +259,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // EMAIL
                           // ===================================
-
                           AppTextField(
                             label: 'E-mail:',
                             icon: Icons.email_outlined,
@@ -283,7 +273,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // CONTRASEÑAS
                           // ===================================
-
                           if (screenWidth >= 700)
                             Row(
                               children: [
@@ -361,7 +350,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           TextButton(
                             onPressed: () {
-                              Navigator.pushReplacementNamed(context, AppRoutes.login,);
+                              Navigator.pushNamed(context, AppRoutes.login,);
                             },
                             child: const Text(
                               'Iniciar de Sesión',

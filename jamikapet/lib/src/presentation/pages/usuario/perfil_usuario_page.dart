@@ -13,7 +13,7 @@ class PerfilUsuarioPage extends StatefulWidget {
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
   void cerrarSesion(BuildContext context) {
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+    Navigator.pushNamed(context, AppRoutes.login);
   }
 
   @override
@@ -28,10 +28,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         mostrarLogo: true,
         mostrarRegreso: false,
       ),
-      body: SafeArea(
-        child: Column(
-          children: [                         
-            Expanded(
+      body: Column(
+        children: [
+          // Contenido de la pantalla
+          Expanded(
+            child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                 child: Column(
@@ -75,118 +76,14 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     ),
 
                     const SizedBox(height: 12),
-
-                    // InkWell(
-                    //   onTap: () {
-                    //     Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
-                    //   },
-                    //   borderRadius: BorderRadius.circular(16),
-                    //   child: Container(
-                    //     width: 100,
-                    //     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                    //     decoration: BoxDecoration(
-                    //       color: Colors.white,
-                    //       borderRadius: BorderRadius.circular(16),
-                    //       border: Border.all(color: const Color(0xFFB2DFDB)),
-                    //       boxShadow: [
-                    //         BoxShadow(
-                    //           color: Colors.black.withValues(alpha: 0.03),
-                    //           blurRadius: 6,
-                    //           offset: const Offset(0, 3),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //     child: Column(
-                    //       children: [
-                    //         Container(
-                    //           padding: const EdgeInsets.all(10),
-                    //           decoration: BoxDecoration(
-                    //             color: const Color(0xFFFFF3E0),
-                    //             borderRadius: BorderRadius.circular(12),
-                    //           ),
-                    //           child: const Icon(
-                    //             Icons.pets,
-                    //             size: 36,
-                    //             color: Colors.orangeAccent,
-                    //           ),
-                    //         ),
-
-                    //         const SizedBox(height: 8),
-
-                    //         const Text(
-                    //           'Perro',
-                    //           style: TextStyle(
-                    //             fontSize: 13,
-                    //             fontWeight: FontWeight.w600,
-                    //             color: darkText,
-                    //           ),
-                    //         ),         
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ), 
-
-                    // const SizedBox(height: 12),
-
-                    // InkWell(
-                    //   onTap: () {
-                    //     Navigator.pushReplacementNamed(context, AppRoutes.registroPet,);
-                    //   },
-                    //   borderRadius: BorderRadius.circular(16),
-                    //   child: Container(
-                    //     width: 100,
-                    //     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                    //     decoration: BoxDecoration(
-                    //       color: Colors.white,
-                    //       borderRadius: BorderRadius.circular(16),
-                    //       border: Border.all(color: const Color(0xFFB2DFDB)),
-                    //       boxShadow: [
-                    //         BoxShadow(
-                    //           color: Colors.black.withValues(alpha: 0.03),
-                    //           blurRadius: 6,
-                    //           offset: const Offset(0, 3),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //     child: Column(
-                    //       children: [
-                    //         Container(
-                    //           padding: const EdgeInsets.all(10),
-                    //           decoration: BoxDecoration(
-                    //             color: const Color.fromARGB(255, 224, 242, 255),
-                    //             borderRadius: BorderRadius.circular(12),
-                    //           ),
-                    //           child: const Icon(
-                    //             Icons.add,
-                    //             size: 36,
-                    //             color: Colors.blueAccent,
-                    //           ),
-                    //         ),
-
-                    //         const SizedBox(height: 8),
-
-                    //         const Text(
-                    //           'Agregar Mascota',
-                    //           style: TextStyle(
-                    //             fontSize: 13,
-                    //             fontWeight: FontWeight.w600,
-                    //             color: darkText,
-                    //           ),
-                    //         ),         
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ), 
-
                     
-
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final bool isSmallScreen = constraints.maxWidth < 240;
 
                         final perroCard = InkWell(
                           onTap: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
+                            Navigator.pushNamed(context, AppRoutes.petProfile,);
                           },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
@@ -239,7 +136,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
                         final agregarCard = InkWell(
                           onTap: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.registroPet,);
+                            Navigator.pushNamed(context, AppRoutes.registroPet,);
                           },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
@@ -346,34 +243,34 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 ),
               ),
             ),
+          ),
 
-            // ===============================================================
-            // PIE DE PÁGINA / BARRA INFERIOR
-            // ===============================================================
-            AppBottomNavigation(
-              currentIndex: 3,
-              onItemSelected: (index) {
-                switch (index) {
-                  case 0:
-                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
-                    break;
+          // ===============================================================
+          // PIE DE PÁGINA / BARRA INFERIOR
+          // ===============================================================
+          AppBottomNavigation(
+            currentIndex: 3,
+            onItemSelected: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushNamed(context, AppRoutes.home,);
+                  break;
 
-                  case 1:
-                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
-                    break;
+                case 1:
+                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  break;
 
-                  case 2:
-                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
-                    break;
+                case 2:
+                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  break;
 
-                  case 3:
-                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
-                    break;
-                }
-              },
-            ),
-          ]
-        )
+                case 3:
+                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  break;
+              }
+            },
+          ),
+        ]
       )
     );
   }

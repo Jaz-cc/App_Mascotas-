@@ -165,10 +165,11 @@ class _VacunasScreenState extends State<VacunasScreen> {
         mostrarLogo: true,
         mostrarRegreso: true,
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
+      body: Column(
+        children: [
+          // Contenido de la pantalla
+          Expanded(
+            child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                 child: Column(
@@ -188,34 +189,34 @@ class _VacunasScreenState extends State<VacunasScreen> {
                 ),
               ),
             ),
-            
-            // ===============================================================
-            // PIE DE PÁGINA / BARRA INFERIOR
-            // ===============================================================
-            AppBottomNavigation(
-              currentIndex: 1,
-              onItemSelected: (index) {
-                switch (index) {
-                  case 0:
-                    Navigator.pushReplacementNamed(context, AppRoutes.home,);
-                      break;
-
-                  case 1:
-                    Navigator.pushReplacementNamed(context, AppRoutes.menu,);
+          ),
+          
+          // ===============================================================
+          // PIE DE PÁGINA / BARRA INFERIOR
+          // ===============================================================
+          AppBottomNavigation(
+            currentIndex: 1,
+            onItemSelected: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushNamed(context, AppRoutes.home,);
                     break;
 
-                  case 2:
-                    Navigator.pushReplacementNamed(context, AppRoutes.petProfile,);
-                    break;
+                case 1:
+                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  break;
 
-                  case 3:
-                    Navigator.pushReplacementNamed(context, AppRoutes.perfil,);
-                    break;
-                }
-              },
-            ),
-          ],
-        ),
+                case 2:
+                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  break;
+
+                case 3:
+                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  break;
+              }
+            },
+          ),
+        ],
       ),
     );
   }

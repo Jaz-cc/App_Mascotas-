@@ -174,7 +174,7 @@ class _LoginContentState extends State<_LoginContent> {
                           BlocConsumer<LoginCubit, LoginState>(
                             listener: (context, state) {
                               if (state is LoginSuccess) {
-                                Navigator.pushReplacementNamed(context, AppRoutes.home,);
+                                Navigator.pushNamed(context, AppRoutes.home,);
                               }
 
                               if (state is LoginFailure) {
