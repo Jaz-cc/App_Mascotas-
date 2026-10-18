@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "746751044040",
+    "project_id": "jamikapet-f6866",
+    "storage_bucket": "jamikapet-f6866.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:746751044040:android:90bec51d2ffbb1d032b8fd",
+        "android_client_info": {
+          "package_name": "com.jamikapet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_CcHGqRbzjqLuHtfQ2_Hp8_p-C_VKPbg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
