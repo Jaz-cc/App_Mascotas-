@@ -22,6 +22,7 @@ class _MenuPageState extends State<MenuPage> {
         titulo: 'Menu',
         mostrarLogo: true,
         mostrarRegreso: false,
+        icon: Icons.menu,
       ),
       body: Column(
         children: [
@@ -127,6 +128,17 @@ class _MenuPageState extends State<MenuPage> {
                       title: 'Citas Veterinarias',
                       onTap: () {
                         Navigator.pushNamed(context, AppRoutes.citas);
+                      },
+                    ),
+                    
+                    const SizedBox(height: 20),
+
+                    //CHAT IA
+                    _buildMenuOption(
+                      icon: Icons.smart_toy_outlined,
+                      title: 'Asistente IA',
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.chatIA);
                       },
                     ),
                     

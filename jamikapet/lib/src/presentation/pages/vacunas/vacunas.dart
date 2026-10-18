@@ -164,6 +164,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
         titulo: 'Vacunas',
         mostrarLogo: true,
         mostrarRegreso: true,
+        icon: Icons.clean_hands_outlined,
       ),
       body: Column(
         children: [

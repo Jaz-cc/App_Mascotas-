@@ -27,6 +27,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         titulo: 'Perfil de usuario',
         mostrarLogo: true,
         mostrarRegreso: false,
+        icon: Icons.person,
       ),
       body: Column(
         children: [

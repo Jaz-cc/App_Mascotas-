@@ -15,13 +15,15 @@ class HomePage extends StatelessWidget {
         titulo: 'Inicio',
         mostrarLogo: true,
         mostrarRegreso: false,
+        icon: Icons.home_outlined,        
       ),
-      body: Center(
-        child: Column(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+      body: Column(
+        children: [
+          // Contenido de la pantalla
+          Expanded(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -67,35 +69,35 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+          ),
 
-            // ===============================================================
-            // PIE DE PÁGINA / BARRA INFERIOR
-            // ===============================================================
-            AppBottomNavigation(
-              currentIndex: 0,
-              onItemSelected: (index) {
-                switch (index) {
-                  case 0:
-                    Navigator.pushNamed(context, AppRoutes.home,);
-                    break;
+          // ===============================================================
+          // PIE DE PÁGINA / BARRA INFERIOR
+          // ===============================================================
+          AppBottomNavigation(
+            currentIndex: 0,
+            onItemSelected: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushNamed(context, AppRoutes.home,);
+                  break;
 
-                  case 1:
-                    Navigator.pushNamed(context, AppRoutes.menu,);
-                    break;
+                case 1:
+                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  break;
 
-                  case 2:
-                    Navigator.pushNamed(context, AppRoutes.petProfile,);
-                    break;
-                  
-                  case 3:
-                    Navigator.pushNamed(context, AppRoutes.perfil,);
-                    break;
-                }
-              },
-            ),
-          ]
-        )
-      ),
+                case 2:
+                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  break;
+                
+                case 3:
+                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  break;
+              }
+            },
+          ),
+        ]
+      )
     );
   }
 }

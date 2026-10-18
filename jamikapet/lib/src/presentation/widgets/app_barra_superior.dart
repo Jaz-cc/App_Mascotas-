@@ -8,6 +8,7 @@ class HeaderAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   final String titulo;
   final String subtitulo;
+  final IconData? icon;
   final Color colorTexto;
   final Color colorSubtitulo;
   final Color? colorFondo;
@@ -21,6 +22,7 @@ class HeaderAppBar extends StatelessWidget
     super.key,
     this.titulo = '',
     this.subtitulo = '',
+    this.icon,
     this.colorTexto = _Paleta.primarioOscuro,
     this.colorSubtitulo = _Paleta.textoSuave,
     this.colorFondo = _Paleta.fondo,
@@ -55,6 +57,18 @@ class HeaderAppBar extends StatelessWidget
                     minimumSize: const Size(46, 46),
                     shape: const CircleBorder(),
                   ),
+                ),
+                const SizedBox(width: 10),
+              ],
+
+              // -----------------------------------------------------
+              // ICONO OPCIONAL
+              // -----------------------------------------------------
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  color: colorTexto,
+                  size: 28,
                 ),
                 const SizedBox(width: 10),
               ],

@@ -38,7 +38,8 @@ class PetProfilePage extends StatelessWidget {
       appBar: const HeaderAppBar(
         titulo: 'Perfil de la Mascota',
         mostrarLogo: true,
-        mostrarRegreso: false,    
+        mostrarRegreso: false,
+        icon: Icons.pets_outlined,    
       ),
       body: Column(
         children: [

@@ -74,6 +74,7 @@ class _DewormingPageState extends State<DewormingPage> {
         mostrarLogo: true,
         mostrarRegreso: true,
         mostrarNotificaciones: true,
+        icon: Icons.bug_report_outlined,
       ),
       body: Column(
         children: [

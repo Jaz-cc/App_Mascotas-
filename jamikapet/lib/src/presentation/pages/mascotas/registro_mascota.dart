@@ -134,6 +134,7 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
           mostrarRegreso: true,        
           mostrarLogo: true,
           mostrarNotificaciones: true,
+          icon: Icons.assignment,
         ),
         // ---------------- CONTENIDO ----------------
         body: Column(

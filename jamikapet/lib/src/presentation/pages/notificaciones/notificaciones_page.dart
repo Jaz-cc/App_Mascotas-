@@ -163,6 +163,7 @@ class _NotificacionesPageState
         mostrarRegreso: true,
         mostrarLogo: true,
         mostrarNotificaciones: false,
+        icon: Icons.notifications_none_outlined,
       ),
       body: Column(
         children: [

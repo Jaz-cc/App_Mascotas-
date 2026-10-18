@@ -116,12 +116,12 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
 
     return Scaffold(
       backgroundColor: primaryBackground,
-
       appBar: const HeaderAppBar(
         titulo: 'Citas',
         mostrarRegreso: true,
         mostrarLogo: true,
         mostrarNotificaciones: true,
+        icon: Icons.event_available_outlined
       ),
       body: Column(
         children: [
