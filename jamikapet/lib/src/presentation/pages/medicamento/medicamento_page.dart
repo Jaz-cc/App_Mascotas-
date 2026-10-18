@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
 import 'package:jamikapet/src/presentation/pages/usuario/perfilUsuario_page.dart';
+import 'package:jamikapet/src/presentation/pages/IAchat/ia_chat_page.dart';
 
 class MedicamentoPage extends StatefulWidget {
   const MedicamentoPage({super.key});
@@ -596,6 +597,27 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
           ),
         ),
       ),
+
+      // BOTÓN FLOTANTE PARA ABRIR LA IA
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF1F7A70),
+        elevation: 4,
+        tooltip: 'Asistente IA',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ChatIaPage(),
+            ),
+          );
+        },
+        child: const Icon(
+          Icons.smart_toy_outlined,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
+
       bottomNavigationBar: _buildStandardBottomNavigationBar(),
     );
   }
