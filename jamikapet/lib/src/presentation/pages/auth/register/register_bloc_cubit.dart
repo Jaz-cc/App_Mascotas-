@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:jamikapet/src/models/usuario.dart';
+import 'package:jamikapet/src/services/auth_service.dart';
+
 class RegisterBlocCubit {
   // ============================================================
   // CONTROLLERS
@@ -11,6 +14,9 @@ class RegisterBlocCubit {
       StreamController<String>.broadcast();
 
   final StreamController<String> _emailController =
+      StreamController<String>.broadcast();
+
+  final StreamController<String> _phoneController =
       StreamController<String>.broadcast();
 
   final StreamController<String> _passwordController =
@@ -28,6 +34,7 @@ class RegisterBlocCubit {
   String _name = '';
   String _lastname = '';
   String _email = '';
+  String _phone = '';
   String _password = '';
   String _confirmPassword = '';
 
@@ -40,10 +47,11 @@ class RegisterBlocCubit {
 
   Stream<String> get emailStream => _emailController.stream;
 
+  Stream<String> get phoneStream => _phoneController.stream;
+
   Stream<String> get passwordStream => _passwordController.stream;
 
-  Stream<String> get confirmPasswordStream =>
-      _confirmPasswordController.stream;
+  Stream<String> get confirmPasswordStream => _confirmPasswordController.stream;
 
   Stream<bool> get validateForm => _validateFormController.stream;
 
@@ -99,6 +107,22 @@ class RegisterBlocCubit {
   }
 
   // ============================================================
+  // TELÉFONO
+  // ============================================================
+  void changePhone(String value) {
+    _phone = value.trim();
+
+    final error = _validatePhone(_phone);
+    if (error != null) {
+      _phoneController.addError(error);
+    } else {
+      _phoneController.add(_phone);
+    }
+
+    _validateForm();
+  }
+
+  // ============================================================
   // CONTRASEÑA
   // ============================================================
   void changePassword(String value) {
@@ -135,10 +159,7 @@ class RegisterBlocCubit {
   void changeConfirmPassword(String value) {
     _confirmPassword = value;
 
-    final error = _validateConfirmPassword(
-      _password,
-      _confirmPassword,
-    );
+    final error = _validateConfirmPassword(_password, _confirmPassword);
 
     if (error != null) {
       _confirmPasswordController.addError(error);
@@ -156,23 +177,6 @@ class RegisterBlocCubit {
     if (value.isEmpty) {
       return 'El nombre es obligatorio';
     }
-
-    if (value.length < 3) {
-      return 'El nombre debe tener al menos 3 caracteres';
-    }
-
-    if (value.length > 50) {
-      return 'El nombre no puede superar los 50 caracteres';
-    }
-
-    final regex = RegExp(
-      r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$',
-    );
-
-    if (!regex.hasMatch(value)) {
-      return 'El nombre solo puede contener letras';
-    }
-
     return null;
   }
 
@@ -183,23 +187,6 @@ class RegisterBlocCubit {
     if (value.isEmpty) {
       return 'El apellido es obligatorio';
     }
-
-    if (value.length < 3) {
-      return 'El apellido debe tener al menos 3 caracteres';
-    }
-
-    if (value.length > 50) {
-      return 'El apellido no puede superar los 50 caracteres';
-    }
-
-    final regex = RegExp(
-      r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$',
-    );
-
-    if (!regex.hasMatch(value)) {
-      return 'El apellido solo puede contener letras';
-    }
-
     return null;
   }
 
@@ -211,14 +198,19 @@ class RegisterBlocCubit {
       return 'El correo electrónico es obligatorio';
     }
 
-    final regex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    );
+    final regex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
 
     if (!regex.hasMatch(value)) {
       return 'Ingresa un correo electrónico válido';
     }
 
+    return null;
+  }
+
+  String? _validatePhone(String value) {
+    if (value.isEmpty) {
+      return 'El teléfono es obligatorio';
+    }
     return null;
   }
 
@@ -234,28 +226,13 @@ class RegisterBlocCubit {
       return 'La contraseña debe tener al menos 8 caracteres';
     }
 
-    if (!RegExp(r'[A-Z]').hasMatch(value)) {
-      return 'Debe contener al menos una mayúscula';
-    }
-
-    if (!RegExp(r'[a-z]').hasMatch(value)) {
-      return 'Debe contener al menos una minúscula';
-    }
-
-    if (!RegExp(r'[0-9]').hasMatch(value)) {
-      return 'Debe contener al menos un número';
-    }
-
     return null;
   }
 
   // ============================================================
   // VALIDAR CONFIRMACIÓN
   // ============================================================
-  String? _validateConfirmPassword(
-    String password,
-    String confirmPassword,
-  ) {
+  String? _validateConfirmPassword(String password, String confirmPassword) {
     if (confirmPassword.isEmpty) {
       return 'Confirma tu contraseña';
     }
@@ -274,19 +251,17 @@ class RegisterBlocCubit {
     final validName = _validateName(_name) == null;
     final validLastname = _validateLastname(_lastname) == null;
     final validEmail = _validateEmail(_email) == null;
+    final validPhone = _validatePhone(_phone) == null;
     final validPassword = _validatePassword(_password) == null;
 
     final validConfirmPassword =
-        _validateConfirmPassword(
-          _password,
-          _confirmPassword,
-        ) ==
-        null;
+        _validateConfirmPassword(_password, _confirmPassword) == null;
 
     final valid =
         validName &&
         validLastname &&
         validEmail &&
+        validPhone &&
         validPassword &&
         validConfirmPassword;
 
@@ -296,23 +271,23 @@ class RegisterBlocCubit {
   // ============================================================
   // REGISTRO
   // ============================================================
-  Future<void> register() async {
-    // Validación final antes de registrar.
-
+  Future<Usuario> register() async {
     if (_validateName(_name) != null ||
         _validateLastname(_lastname) != null ||
         _validateEmail(_email) != null ||
+        _validatePhone(_phone) != null ||
         _validatePassword(_password) != null ||
-        _validateConfirmPassword(
-              _password,
-              _confirmPassword,
-            ) !=
-            null) {
-      return;
+        _validateConfirmPassword(_password, _confirmPassword) != null) {
+      throw const AuthException('Verifica los datos ingresados.');
     }
 
-    // Aquí posteriormente se conectará el servicio
-    // encargado de guardar el usuario.
+    return AuthService().registrarUsuario(
+      nombre: _name,
+      apellido: _lastname,
+      email: _email,
+      phone: _phone,
+      password: _password,
+    );
   }
 
   // ============================================================
@@ -323,6 +298,7 @@ class RegisterBlocCubit {
       'nombre': _name,
       'apellido': _lastname,
       'email': _email,
+      'phone': _phone,
       'password': _password,
     };
   }
@@ -334,9 +310,9 @@ class RegisterBlocCubit {
     _nameController.close();
     _lastnameController.close();
     _emailController.close();
+    _phoneController.close();
     _passwordController.close();
     _confirmPasswordController.close();
     _validateFormController.close();
   }
 }
-

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/models/desparasitacion.dart';
+import 'package:jamikapet/src/models/mascota.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
+import 'package:jamikapet/src/services/desparacitacion_service.dart';
+import 'package:jamikapet/src/services/mascota_service.dart';
 
 class DewormingPage extends StatefulWidget {
   const DewormingPage({super.key});
@@ -11,57 +15,118 @@ class DewormingPage extends StatefulWidget {
 }
 
 class _DewormingPageState extends State<DewormingPage> {
-  String mascotaSeleccionada = 'Kyra';
+  List<Mascota> _mascotas = [];
+  Mascota? _mascotaSeleccionada;
+  List<Desparasitacion> _tratamientos = [];
+  bool _cargandoMascotas = true;
+  bool _cargandoTratamientos = false;
+  String? _error;
 
-  final List<String> mascotas = ['Kyra', 'Luky', 'Manzano'];
+  @override
+  void initState() {
+    super.initState();
+    _cargarInicial();
+  }
 
-  final List<Map<String, String>> tratamientos = [
-    {
-      'mascota': 'Kyra',
-      'nombre': 'Desparasitación interna',
-      'producto': 'Antiparasitario oral',
-      'fecha': '10 - 09 - 2026',
-      'proxima': '10 - 12 - 2026',
-      'estado': 'Aplicada',
-    },
-    {
-      'mascota': 'Kyra',
-      'nombre': 'Desparasitación externa',
-      'producto': 'Tratamiento antipulgas',
-      'fecha': '15 - 08 - 2026',
-      'proxima': '15 - 11 - 2026',
-      'estado': 'Aplicada',
-    },
-    {
-      'mascota': 'Luky',
-      'nombre': 'Desparasitación interna',
-      'producto': 'Antiparasitario oral',
-      'fecha': '02 - 09 - 2026',
-      'proxima': '02 - 12 - 2026',
-      'estado': 'Aplicada',
-    },
-    {
-      'mascota': 'Manzano',
-      'nombre': 'Próxima desparasitación',
-      'producto': 'Pendiente de registrar',
-      'fecha': 'Pendiente',
-      'proxima': '10 - 12 - 2026',
-      'estado': 'Pendiente',
-    },
-  ];
+  Future<String?> _obtenerToken() async => null;
 
-  List<Map<String, String>> get _tratamientosFiltrados => tratamientos
-      .where((t) => t['mascota'] == mascotaSeleccionada)
-      .toList();
+  Future<void> _cargarInicial() async {
+    setState(() {
+      _cargandoMascotas = true;
+      _error = null;
+    });
 
-  Map<String, String>? get _proximoTratamiento {
-    final pendientes = _tratamientosFiltrados
-        .where((t) => t['estado'] == 'Pendiente')
-        .toList();
+    try {
+      final token = await _obtenerToken();
+      final mascotas = await MascotaService(token: token).obtenerMascotas();
+      if (!mounted) return;
+
+      setState(() {
+        _mascotas = mascotas;
+        _mascotaSeleccionada = mascotas.isEmpty
+            ? null
+            : mascotas.firstWhere(
+                (mascota) => mascota.id == _mascotaSeleccionada?.id,
+                orElse: () => mascotas.first,
+              );
+        _tratamientos = [];
+      });
+
+      if (_mascotaSeleccionada != null) {
+        await _cargarTratamientos();
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _cargandoMascotas = false);
+    }
+  }
+
+  Future<void> _cargarTratamientos() async {
+    final mascota = _mascotaSeleccionada;
+    if (mascota == null) return;
+
+    setState(() {
+      _cargandoTratamientos = true;
+      _error = null;
+    });
+
+    try {
+      final token = await _obtenerToken();
+      final tratamientos = await DesparasitacionService(token: token)
+          .obtenerPorMascota(mascota.id);
+      if (!mounted || _mascotaSeleccionada?.id != mascota.id) return;
+      setState(() => _tratamientos = tratamientos);
+    } catch (error) {
+      if (!mounted || _mascotaSeleccionada?.id != mascota.id) return;
+      setState(() {
+        _tratamientos = [];
+        _error = error.toString();
+      });
+    } finally {
+      if (mounted && _mascotaSeleccionada?.id == mascota.id) {
+        setState(() => _cargandoTratamientos = false);
+      }
+    }
+  }
+
+  void _seleccionarMascota(Mascota mascota) {
+    if (mascota.id == _mascotaSeleccionada?.id) return;
+    setState(() {
+      _mascotaSeleccionada = mascota;
+      _tratamientos = [];
+    });
+    _cargarTratamientos();
+  }
+
+  List<Desparasitacion> get _tratamientosFiltrados => _tratamientos;
+
+  Desparasitacion? get _proximoTratamiento {
+    final pendientes =
+        _tratamientosFiltrados
+            .where(
+              (tratamiento) =>
+                  tratamiento.estado.toLowerCase() == 'pendiente' &&
+                  tratamiento.proximaDosis != null,
+            )
+            .toList()
+          ..sort((a, b) => a.proximaDosis!.compareTo(b.proximaDosis!));
     if (pendientes.isNotEmpty) return pendientes.first;
-    return _tratamientosFiltrados.isNotEmpty
-        ? _tratamientosFiltrados.first
-        : null;
+
+    final hoy = DateTime.now();
+    final proximos =
+        _tratamientosFiltrados
+            .where(
+              (tratamiento) =>
+                  tratamiento.proximaDosis != null &&
+                  !tratamiento.proximaDosis!.isBefore(
+                    DateTime(hoy.year, hoy.month, hoy.day),
+                  ),
+            )
+            .toList()
+          ..sort((a, b) => a.proximaDosis!.compareTo(b.proximaDosis!));
+    return proximos.isEmpty ? null : proximos.first;
   }
 
   @override
@@ -81,33 +146,59 @@ class _DewormingPageState extends State<DewormingPage> {
           // Contenido de la pantalla
           Expanded(
             child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _tarjetaEncabezado(),
-                    const SizedBox(height: 18),
-                    _selectorMascotas(),
-                    const SizedBox(height: 18),
-                    if (_proximoTratamiento != null) _tarjetaProximaDosis(),
-                    const SizedBox(height: 22),
-                    const Text(
-                      'Historial de tratamientos',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: _Paleta.tinta,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_tratamientosFiltrados.isEmpty)
-                      _estadoVacio()
-                    else
-                      ..._tratamientosFiltrados.map(_tarjetaTratamiento),
-                    const SizedBox(height: 6),
-                    _botonRegistrar(),
-                  ],
+              child: RefreshIndicator(
+                color: _Paleta.primarioOscuro,
+                onRefresh: _cargarInicial,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _tarjetaEncabezado(),
+                      const SizedBox(height: 18),
+                      if (_cargandoMascotas)
+                        _estadoCargando()
+                      else if (_mascotas.isEmpty)
+                        _error != null
+                            ? _estadoError(
+                                'No pudimos cargar tus mascotas.',
+                                _cargarInicial,
+                              )
+                            : _estadoMascotasVacio()
+                      else ...[
+                        _selectorMascotas(),
+                        const SizedBox(height: 18),
+                        if (_error != null)
+                          _estadoError(
+                            'No pudimos cargar los tratamientos.',
+                            _cargarTratamientos,
+                          )
+                        else ...[
+                          if (_proximoTratamiento != null)
+                            _tarjetaProximaDosis(),
+                          const SizedBox(height: 22),
+                          const Text(
+                            'Historial de tratamientos',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: _Paleta.tinta,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_cargandoTratamientos)
+                            _estadoCargando()
+                          else if (_tratamientosFiltrados.isEmpty)
+                            _estadoVacio()
+                          else
+                            ..._tratamientosFiltrados.map(_tarjetaTratamiento),
+                          const SizedBox(height: 6),
+                          _botonRegistrar(),
+                        ],
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -121,19 +212,19 @@ class _DewormingPageState extends State<DewormingPage> {
             onItemSelected: (index) {
               switch (index) {
                 case 0:
-                  Navigator.pushNamed(context, AppRoutes.home,);
+                  Navigator.pushNamed(context, AppRoutes.home);
                   break;
 
                 case 1:
-                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  Navigator.pushNamed(context, AppRoutes.menu);
                   break;
 
                 case 2:
-                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  Navigator.pushNamed(context, AppRoutes.petProfile);
                   break;
-                
+
                 case 3:
-                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  Navigator.pushNamed(context, AppRoutes.perfil);
                   break;
               }
             },
@@ -226,22 +317,22 @@ class _DewormingPageState extends State<DewormingPage> {
         Wrap(
           spacing: 10,
           runSpacing: 10,
-          children: mascotas.map((mascota) {
-            final seleccionada = mascota == mascotaSeleccionada;
+          children: _mascotas.map((mascota) {
+            final seleccionada = mascota.id == _mascotaSeleccionada?.id;
             return Semantics(
               button: true,
               selected: seleccionada,
-              label: 'Ver tratamientos de $mascota',
+              label: 'Ver tratamientos de ${mascota.nombre}',
               child: InkWell(
                 borderRadius: BorderRadius.circular(22),
-                onTap: () =>
-                    setState(() => mascotaSeleccionada = mascota),
+                onTap: () => _seleccionarMascota(mascota),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
                   decoration: BoxDecoration(
-                    color:
-                        seleccionada ? _Paleta.verdeMuyClaro : Colors.white,
+                    color: seleccionada ? _Paleta.verdeMuyClaro : Colors.white,
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
                       color: seleccionada
@@ -253,11 +344,10 @@ class _DewormingPageState extends State<DewormingPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.pets,
-                          size: 15, color: _Paleta.primarioOscuro),
+                      Icon(Icons.pets, size: 15, color: _Paleta.primarioOscuro),
                       const SizedBox(width: 6),
                       Text(
-                        mascota,
+                        mascota.nombre,
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: seleccionada
@@ -284,7 +374,8 @@ class _DewormingPageState extends State<DewormingPage> {
     final tratamiento = _proximoTratamiento!;
     return Semantics(
       label:
-          '${tratamiento['nombre']}, ${tratamiento['proxima']}',
+          '${tratamiento.nombre}, '
+          '${_formatearFecha(tratamiento.proximaDosis)}',
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),
@@ -330,7 +421,7 @@ class _DewormingPageState extends State<DewormingPage> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    tratamiento['proxima']!,
+                    _formatearFecha(tratamiento.proximaDosis),
                     style: const TextStyle(
                       fontSize: 13,
                       color: _Paleta.tintaSuave,
@@ -367,6 +458,87 @@ class _DewormingPageState extends State<DewormingPage> {
     );
   }
 
+  Widget _estadoCargando() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 32),
+      child: Center(
+        child: CircularProgressIndicator(color: _Paleta.primarioOscuro),
+      ),
+    );
+  }
+
+  Widget _estadoError(String titulo, Future<void> Function() reintentar) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.cloud_off_rounded,
+            size: 38,
+            color: _Paleta.tintaSuave,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            titulo,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: _Paleta.tinta,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
+          ),
+          TextButton.icon(
+            onPressed: () => reintentar(),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _estadoMascotasVacio() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.pets_rounded, size: 38, color: _Paleta.tintaSuave),
+          SizedBox(height: 10),
+          Text(
+            'Aún no tienes mascotas',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: _Paleta.tinta,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Registra una mascota para consultar sus desparasitaciones.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ===============================================================
   // ESTADO VACÍO
   // ===============================================================
@@ -380,8 +552,11 @@ class _DewormingPageState extends State<DewormingPage> {
       ),
       child: Column(
         children: [
-          const Icon(Icons.medication_outlined,
-              size: 38, color: _Paleta.tintaSuave),
+          const Icon(
+            Icons.medication_outlined,
+            size: 38,
+            color: _Paleta.tintaSuave,
+          ),
           const SizedBox(height: 10),
           const Text(
             'Sin tratamientos registrados',
@@ -393,7 +568,8 @@ class _DewormingPageState extends State<DewormingPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Registra la primera desparasitación de $mascotaSeleccionada',
+            'Registra la primera desparasitación de '
+            '${_mascotaSeleccionada?.nombre ?? 'tu mascota'}',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
           ),
@@ -405,11 +581,12 @@ class _DewormingPageState extends State<DewormingPage> {
   // ===============================================================
   // TARJETA DE TRATAMIENTO
   // ===============================================================
-  Widget _tarjetaTratamiento(Map<String, String> tratamiento) {
-    final pendiente = tratamiento['estado'] == 'Pendiente';
+  Widget _tarjetaTratamiento(Desparasitacion tratamiento) {
+    final pendiente = tratamiento.estado.toLowerCase() == 'pendiente';
     final colorEstado = pendiente ? _Paleta.pendiente : _Paleta.aplicada;
-    final iconoEstado =
-        pendiente ? Icons.schedule_rounded : Icons.check_rounded;
+    final iconoEstado = pendiente
+        ? Icons.schedule_rounded
+        : Icons.check_rounded;
 
     return Container(
       width: double.infinity,
@@ -448,7 +625,7 @@ class _DewormingPageState extends State<DewormingPage> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  tratamiento['nombre']!,
+                  tratamiento.nombre,
                   style: const TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
@@ -457,8 +634,7 @@ class _DewormingPageState extends State<DewormingPage> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: colorEstado.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
@@ -469,7 +645,7 @@ class _DewormingPageState extends State<DewormingPage> {
                     Icon(iconoEstado, size: 12, color: colorEstado),
                     const SizedBox(width: 3),
                     Text(
-                      tratamiento['estado']!,
+                      tratamiento.estado,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -483,7 +659,7 @@ class _DewormingPageState extends State<DewormingPage> {
           ),
           const SizedBox(height: 10),
           Text(
-            tratamiento['producto']!,
+            tratamiento.producto,
             style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
           ),
           const SizedBox(height: 10),
@@ -495,9 +671,15 @@ class _DewormingPageState extends State<DewormingPage> {
             ),
             child: Column(
               children: [
-                _filaFecha('Fecha de aplicación', tratamiento['fecha']!),
+                _filaFecha(
+                  'Fecha de aplicación',
+                  _formatearFecha(tratamiento.fechaAplicacion),
+                ),
                 const SizedBox(height: 6),
-                _filaFecha('Próxima dosis', tratamiento['proxima']!),
+                _filaFecha(
+                  'Próxima dosis',
+                  _formatearFecha(tratamiento.proximaDosis),
+                ),
               ],
             ),
           ),
@@ -561,7 +743,8 @@ class _DewormingPageState extends State<DewormingPage> {
     final productoController = TextEditingController();
     DateTime? fechaAplicacion;
     DateTime? proximaDosis;
-    String mascotaDelFormulario = mascotaSeleccionada;
+    Mascota? mascotaDelFormulario = _mascotaSeleccionada;
+    bool guardando = false;
 
     showDialog(
       context: context,
@@ -608,13 +791,14 @@ class _DewormingPageState extends State<DewormingPage> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: mascotas.map((m) {
-                          final activa = m == mascotaDelFormulario;
+                        children: _mascotas.map((mascota) {
+                          final activa = mascota.id == mascotaDelFormulario?.id;
                           return ChoiceChip(
-                            label: Text(m),
+                            label: Text(mascota.nombre),
                             selected: activa,
                             onSelected: (_) => actualizarDialogo(
-                                () => mascotaDelFormulario = m),
+                              () => mascotaDelFormulario = mascota,
+                            ),
                             selectedColor: _Paleta.verdeMuyClaro,
                             backgroundColor: Colors.white,
                             side: BorderSide(
@@ -689,7 +873,9 @@ class _DewormingPageState extends State<DewormingPage> {
                         children: [
                           Expanded(
                             child: TextButton(
-                              onPressed: () => Navigator.pop(dialogContext),
+                              onPressed: guardando
+                                  ? null
+                                  : () => Navigator.pop(dialogContext),
                               child: const Text(
                                 'Cancelar',
                                 style: TextStyle(color: _Paleta.tintaSuave),
@@ -707,42 +893,81 @@ class _DewormingPageState extends State<DewormingPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: () {
-                                if (productoController.text.trim().isEmpty ||
-                                    fechaAplicacion == null ||
-                                    proximaDosis == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Completa todos los campos'),
-                                    ),
-                                  );
-                                  return;
-                                }
+                              onPressed: guardando
+                                  ? null
+                                  : () async {
+                                      if (mascotaDelFormulario == null ||
+                                          productoController.text
+                                              .trim()
+                                              .isEmpty ||
+                                          fechaAplicacion == null ||
+                                          proximaDosis == null) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Completa todos los campos',
+                                                ),
+                                              ),
+                                            );
+                                        return;
+                                      }
 
-                                setState(() {
-                                  tratamientos.insert(0, {
-                                    'mascota': mascotaDelFormulario,
-                                    'nombre': 'Desparasitación',
-                                    'producto': productoController.text.trim(),
-                                    'fecha': _formatearFecha(fechaAplicacion!),
-                                    'proxima': _formatearFecha(proximaDosis!),
-                                    'estado': 'Aplicada',
-                                  });
-                                  mascotaSeleccionada = mascotaDelFormulario;
-                                });
+                                      actualizarDialogo(() => guardando = true);
+                                      try {
+                                        await DesparasitacionService(
+                                          token: await _obtenerToken(),
+                                        ).registrar(
+                                          mascotaId: mascotaDelFormulario!.id,
+                                          nombre: 'Desparasitación',
+                                          producto: productoController.text
+                                              .trim(),
+                                          fechaAplicacion: fechaAplicacion!,
+                                          proximaDosis: proximaDosis!,
+                                        );
 
-                                Navigator.pop(dialogContext);
-                                ScaffoldMessenger.of(this.context)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Tratamiento registrado correctamente',
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text('Guardar'),
+                                        if (!mounted) return;
+                                        setState(() {
+                                          _mascotaSeleccionada =
+                                              mascotaDelFormulario;
+                                        });
+                                        if (dialogContext.mounted) {
+                                          Navigator.pop(dialogContext);
+                                        }
+                                        await _cargarTratamientos();
+                                        if (!mounted) return;
+                                        ScaffoldMessenger.of(this.context)
+                                            .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Tratamiento registrado correctamente',
+                                                ),
+                                              ),
+                                            );
+                                      } catch (error) {
+                                        if (!mounted) return;
+                                        if (dialogContext.mounted) {
+                                          actualizarDialogo(
+                                            () => guardando = false,
+                                          );
+                                        }
+                                        ScaffoldMessenger.of(this.context)
+                                            .showSnackBar(
+                                              SnackBar(
+                                                content: Text(error.toString()),
+                                              ),
+                                            );
+                                      }
+                                    },
+                              child: guardando
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Guardar'),
                             ),
                           ),
                         ],
@@ -758,10 +983,7 @@ class _DewormingPageState extends State<DewormingPage> {
     );
   }
 
-  Widget _campoFecha({
-    required String etiqueta,
-    required VoidCallback onTap,
-  }) {
+  Widget _campoFecha({required String etiqueta, required VoidCallback onTap}) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
@@ -791,7 +1013,8 @@ class _DewormingPageState extends State<DewormingPage> {
     );
   }
 
-  String _formatearFecha(DateTime fecha) {
+  String _formatearFecha(DateTime? fecha) {
+    if (fecha == null) return 'Pendiente';
     return '${fecha.day.toString().padLeft(2, '0')} - '
         '${fecha.month.toString().padLeft(2, '0')} - ${fecha.year}';
   }

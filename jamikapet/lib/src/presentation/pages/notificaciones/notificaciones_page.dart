@@ -1,125 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/models/notificacion.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
+import 'package:jamikapet/src/services/notification_service.dart';
 
 class NotificacionesPage extends StatefulWidget {
   const NotificacionesPage({super.key});
 
   @override
-  State<NotificacionesPage> createState() =>
-      _NotificacionesPageState();
+  State<NotificacionesPage> createState() => _NotificacionesPageState();
 }
 
-enum TipoNotificacion {
-  vacuna,
-  medicamento,
-  cita,
-  desparasitacion,
-  anomalia,
-}
-
-enum FiltroNotificacion {
-  todas,
-  pendientes,
-  atendidas,
-}
-
-class Notificacion {
-  final int id;
-  final String titulo;
-  final String descripcion;
-  final String mascota;
-  final String fecha;
-  final TipoNotificacion tipo;
-  bool atendida;
-
-  Notificacion({
-    required this.id,
-    required this.titulo,
-    required this.descripcion,
-    required this.mascota,
-    required this.fecha,
-    required this.tipo,
-    this.atendida = false,
-  });
-}
-
-class _NotificacionesPageState
-    extends State<NotificacionesPage> {
+class _NotificacionesPageState extends State<NotificacionesPage> {
   FiltroNotificacion _filtro = FiltroNotificacion.todas;
+  final NotificacionService _service = NotificacionService();
+  List<Notificacion> _notificaciones = [];
+  final Set<int> _procesando = {};
+  bool _cargando = true;
+  String? _error;
 
-  final List<Notificacion> _notificaciones = [
-    Notificacion(
-      id: 1,
-      titulo: 'Vacuna próxima',
-      descripcion:
-          'Recuerda revisar la próxima dosis de vacunación.',
-      mascota: 'Luna',
-      fecha: 'Próximamente',
-      tipo: TipoNotificacion.vacuna,
-    ),
-    Notificacion(
-      id: 2,
-      titulo: 'Medicamento pendiente',
-      descripcion:
-          'Es hora de administrar el medicamento registrado.',
-      mascota: 'Milo',
-      fecha: 'Hoy',
-      tipo: TipoNotificacion.medicamento,
-    ),
-    Notificacion(
-      id: 3,
-      titulo: 'Cita veterinaria',
-      descripcion:
-          'Tienes una consulta veterinaria programada.',
-      mascota: 'Luna',
-      fecha: 'Próxima cita',
-      tipo: TipoNotificacion.cita,
-    ),
-    Notificacion(
-      id: 4,
-      titulo: 'Desparasitación',
-      descripcion:
-          'Revisa cuándo corresponde la siguiente dosis.',
-      mascota: 'Milo',
-      fecha: 'Recordatorio',
-      tipo: TipoNotificacion.desparasitacion,
-    ),
-    Notificacion(
-      id: 5,
-      titulo: 'Anomalía por revisar',
-      descripcion:
-          'Se registró un cambio en los hábitos de tu mascota. '
-          'Revisa sus registros y consulta al veterinario si es necesario.',
-      mascota: 'Luna',
-      fecha: 'Requiere revisión',
-      tipo: TipoNotificacion.anomalia,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _cargarNotificaciones();
+  }
 
-  int get _pendientes =>
-      _notificaciones.where((n) => !n.atendida).length;
+  Future<void> _cargarNotificaciones() async {
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+
+    try {
+      final notificaciones = await _service.obtenerNotificaciones();
+      if (!mounted) return;
+      setState(() => _notificaciones = notificaciones);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  int get _pendientes => _notificaciones.where((n) => !n.atendida).length;
 
   List<Notificacion> get _notificacionesFiltradas {
     switch (_filtro) {
       case FiltroNotificacion.pendientes:
-        return _notificaciones
-            .where((n) => !n.atendida)
-            .toList();
+        return _notificaciones.where((n) => !n.atendida).toList();
 
       case FiltroNotificacion.atendidas:
-        return _notificaciones
-            .where((n) => n.atendida)
-            .toList();
+        return _notificaciones.where((n) => n.atendida).toList();
 
       case FiltroNotificacion.todas:
         return List.of(_notificaciones);
     }
   }
 
-  void _marcarAtendida(Notificacion notificacion) {
-    setState(() {
-      notificacion.atendida = !notificacion.atendida;
-    });
+  Future<void> _marcarAtendida(Notificacion notificacion) async {
+    if (!_procesando.add(notificacion.id)) return;
+    setState(() {});
+
+    try {
+      final actualizada = await _service.actualizarEstado(
+        id: notificacion.id,
+        atendida: !notificacion.atendida,
+      );
+      if (!mounted) return;
+      setState(() {
+        final index = _notificaciones.indexWhere(
+          (item) => item.id == notificacion.id,
+        );
+        if (index != -1) _notificaciones[index] = actualizada;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      _mostrarError(error.toString());
+    } finally {
+      _procesando.remove(notificacion.id);
+      if (mounted) setState(() {});
+    }
   }
 
   Future<void> _eliminar(Notificacion notificacion) async {
@@ -127,9 +87,7 @@ class _NotificacionesPageState
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar notificación'),
-        content: const Text(
-          '¿Deseas eliminar esta notificación?',
-        ),
+        content: const Text('¿Deseas eliminar esta notificación?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -144,12 +102,23 @@ class _NotificacionesPageState
     );
 
     if (confirmar == true && mounted) {
-      setState(() {
-        _notificaciones.removeWhere(
-          (n) => n.id == notificacion.id,
-        );
-      });
+      try {
+        await _service.eliminarNotificacion(notificacion.id);
+        if (!mounted) return;
+        setState(() {
+          _notificaciones.removeWhere((n) => n.id == notificacion.id);
+        });
+      } catch (error) {
+        if (!mounted) return;
+        _mostrarError(error.toString());
+      }
     }
+  }
+
+  void _mostrarError(String mensaje) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(mensaje)));
   }
 
   @override
@@ -170,43 +139,50 @@ class _NotificacionesPageState
           // Contenido de la pantalla
           Expanded(
             child: SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  20, 8, 20, 24,
+              child: RefreshIndicator(
+                onRefresh: _cargarNotificaciones,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  children: [
+                    _resumen(),
+                    const SizedBox(height: 22),
+                    const Text(
+                      'Tus notificaciones',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        color: _Colores.tinta,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _filtros(),
+                    const SizedBox(height: 16),
+                    if (_cargando)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 36),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_error != null)
+                      _estadoError()
+                    else if (notificaciones.isEmpty)
+                      _estadoVacio()
+                    else
+                      ...notificaciones.map((n) => _tarjetaNotificacion(n)),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Mantén actualizados los registros de '
+                      'salud de tus mascotas para recibir '
+                      'recordatorios relevantes.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.5,
+                        color: _Colores.textoSuave,
+                      ),
+                    ),
+                  ],
                 ),
-                children: [
-                  _resumen(),
-                  const SizedBox(height: 22),
-                  const Text(
-                    'Tus notificaciones',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: _Colores.tinta,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _filtros(),
-                  const SizedBox(height: 16),
-                  if (notificaciones.isEmpty)
-                    _estadoVacio()
-                  else
-                    ...notificaciones.map(
-                      (n) => _tarjetaNotificacion(n),
-                    ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Mantén actualizados los registros de '
-                    'salud de tus mascotas para recibir '
-                    'recordatorios relevantes.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.5,
-                      color: _Colores.textoSuave,
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -220,10 +196,7 @@ class _NotificacionesPageState
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF1F7A70),
-            Color(0xFF55C8BD),
-          ],
+          colors: [Color(0xFF1F7A70), Color(0xFF55C8BD)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -249,7 +222,8 @@ class _NotificacionesPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Tienes $_pendientes recordatorios pendientes',
+                Text(
+                  'Tienes $_pendientes recordatorios pendientes',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -261,10 +235,7 @@ class _NotificacionesPageState
                   _pendientes == 0
                       ? '¡Todo está al día!'
                       : 'Revisa los cuidados de tus mascotas.',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ],
             ),
@@ -279,29 +250,17 @@ class _NotificacionesPageState
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _chipFiltro(
-            'Todas',
-            FiltroNotificacion.todas,
-          ),
+          _chipFiltro('Todas', FiltroNotificacion.todas),
           const SizedBox(width: 8),
-          _chipFiltro(
-            'Pendientes',
-            FiltroNotificacion.pendientes,
-          ),
+          _chipFiltro('Pendientes', FiltroNotificacion.pendientes),
           const SizedBox(width: 8),
-          _chipFiltro(
-            'Atendidas',
-            FiltroNotificacion.atendidas,
-          ),
+          _chipFiltro('Atendidas', FiltroNotificacion.atendidas),
         ],
       ),
     );
   }
 
-  Widget _chipFiltro(
-    String texto,
-    FiltroNotificacion filtro,
-  ) {
+  Widget _chipFiltro(String texto, FiltroNotificacion filtro) {
     final seleccionado = _filtro == filtro;
 
     return ChoiceChip(
@@ -314,16 +273,52 @@ class _NotificacionesPageState
       selectedColor: _Colores.primarioOscuro,
       backgroundColor: Colors.white,
       labelStyle: TextStyle(
-        color: seleccionado
-            ? Colors.white
-            : _Colores.tinta,
+        color: seleccionado ? Colors.white : _Colores.tinta,
         fontWeight: FontWeight.w600,
         fontSize: 12,
       ),
       side: BorderSide(
-        color: seleccionado
-            ? _Colores.primarioOscuro
-            : _Colores.borde,
+        color: seleccionado ? _Colores.primarioOscuro : _Colores.borde,
+      ),
+    );
+  }
+
+  Widget _estadoError() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.cloud_off_rounded,
+            size: 40,
+            color: _Colores.primarioOscuro,
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'No pudimos cargar las notificaciones',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: _Colores.tinta,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: _Colores.textoSuave),
+          ),
+          TextButton.icon(
+            onPressed: _cargarNotificaciones,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reintentar'),
+          ),
+        ],
       ),
     );
   }
@@ -338,8 +333,7 @@ class _NotificacionesPageState
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: n.tipo == TipoNotificacion.anomalia &&
-                  !n.atendida
+          color: n.tipo == TipoNotificacion.anomalia && !n.atendida
               ? const Color(0xFFF0CACA)
               : Colors.transparent,
         ),
@@ -363,11 +357,7 @@ class _NotificacionesPageState
                   color: color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  _iconoTipo(n.tipo),
-                  color: color,
-                  size: 23,
-                ),
+                child: Icon(_iconoTipo(n.tipo), color: color, size: 23),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -398,14 +388,8 @@ class _NotificacionesPageState
                       spacing: 6,
                       runSpacing: 5,
                       children: [
-                        _etiqueta(
-                          Icons.pets,
-                          n.mascota,
-                        ),
-                        _etiqueta(
-                          Icons.schedule_rounded,
-                          n.fecha,
-                        ),
+                        _etiqueta(Icons.pets, n.mascota),
+                        _etiqueta(Icons.schedule_rounded, n.fecha),
                       ],
                     ),
                   ],
@@ -419,9 +403,7 @@ class _NotificacionesPageState
           Row(
             children: [
               Icon(
-                n.atendida
-                    ? Icons.check_circle_rounded
-                    : Icons.circle_outlined,
+                n.atendida ? Icons.check_circle_rounded : Icons.circle_outlined,
                 size: 16,
                 color: n.atendida
                     ? _Colores.primarioOscuro
@@ -441,15 +423,23 @@ class _NotificacionesPageState
                 ),
               ),
               TextButton(
-                onPressed: () => _marcarAtendida(n),
-                child: Text(
-                  n.atendida ? 'Reabrir' : 'Atender',
-                ),
+                onPressed: _procesando.contains(n.id)
+                    ? null
+                    : () => _marcarAtendida(n),
+                child: _procesando.contains(n.id)
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(n.atendida ? 'Reabrir' : 'Atender'),
               ),
               IconButton(
                 tooltip: 'Eliminar notificación',
                 visualDensity: VisualDensity.compact,
-                onPressed: () => _eliminar(n),
+                onPressed: _procesando.contains(n.id)
+                    ? null
+                    : () => _eliminar(n),
                 icon: const Icon(
                   Icons.delete_outline_rounded,
                   size: 21,
@@ -465,10 +455,7 @@ class _NotificacionesPageState
 
   Widget _etiqueta(IconData icono, String texto) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
         color: _Colores.fondo,
         borderRadius: BorderRadius.circular(8),
@@ -476,18 +463,11 @@ class _NotificacionesPageState
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icono,
-            size: 12,
-            color: _Colores.primarioOscuro,
-          ),
+          Icon(icono, size: 12, color: _Colores.primarioOscuro),
           const SizedBox(width: 4),
           Text(
             texto,
-            style: const TextStyle(
-              fontSize: 10,
-              color: _Colores.tinta,
-            ),
+            style: const TextStyle(fontSize: 10, color: _Colores.tinta),
           ),
         ],
       ),
@@ -497,10 +477,7 @@ class _NotificacionesPageState
   Widget _estadoVacio() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        vertical: 36,
-        horizontal: 20,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -527,10 +504,7 @@ class _NotificacionesPageState
                 ? 'No tienes recordatorios pendientes.'
                 : 'No hay avisos en esta categoría.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              color: _Colores.textoSuave,
-            ),
+            style: const TextStyle(fontSize: 12, color: _Colores.textoSuave),
           ),
         ],
       ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'dart:async';
+
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/pages/auth/register/register_bloc_cubit.dart';
 import 'package:jamikapet/src/presentation/widgets/app_text_field.dart';
@@ -30,6 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final nombreController = TextEditingController();
   final apellidoController = TextEditingController();
   final emailController = TextEditingController();
+  final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmarPasswordController = TextEditingController();
 
@@ -107,17 +110,12 @@ class _RegisterPageState extends State<RegisterPage> {
       // -------------------------------------------------------
       // POSTERIORMENTE: Navegar al Login
       // -------------------------------------------------------
-      Navigator.pushNamed(context, AppRoutes.login,);
-
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     } catch (e) {
       if (!mounted) return;
 
-      Fluttertoast.showToast(
-        msg: 'Ocurrió un error al registrar el usuario',
-        toastLength: Toast.LENGTH_LONG,
-      );
+      Fluttertoast.showToast(msg: e.toString(), toastLength: Toast.LENGTH_LONG);
     } finally {
-
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -135,6 +133,7 @@ class _RegisterPageState extends State<RegisterPage> {
     nombreController.dispose();
     apellidoController.dispose();
     emailController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     confirmarPasswordController.dispose();
     bloc.dispose();
@@ -147,15 +146,11 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  Color(0xFFE0F6F6),
+      backgroundColor: Color(0xFFE0F6F6),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: LayoutBuilder(
-          builder: (
-            BuildContext context,
-            BoxConstraints constraints,
-          ) {
-
+          builder: (BuildContext context, BoxConstraints constraints) {
             // =================================================
             // RESPONSIVIDAD
             // =================================================
@@ -164,15 +159,12 @@ class _RegisterPageState extends State<RegisterPage> {
             return SingleChildScrollView(
               child: Center(
                 child: Container(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
 
                   child: Center(
                     child: SizedBox(
                       child: Column(
                         children: [
-                          
                           const SizedBox(height: 25),
                           // ===================================
                           // TÍTULO
@@ -180,7 +172,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           const Text(
                             'REGISTRO DE USUARIO',
                             style: TextStyle(
-                              
                               fontSize: 27,
                               fontWeight: FontWeight.w900,
                               color: Colors.black,
@@ -192,10 +183,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           // LOGO
                           // ===================================
-                          const AppLogo(
-                            width: 150,
-                            height: 150,
-                          ),
+                          const AppLogo(width: 150, height: 150),
 
                           const SizedBox(height: 25),
 
@@ -209,7 +197,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   child: AppTextField(
                                     label: 'Nombre:',
                                     icon: Icons.account_circle_outlined,
-                                    textCapitalization: TextCapitalization.words,
+                                    textCapitalization:
+                                        TextCapitalization.words,
                                     controller: nombreController,
                                     onChanged: bloc.changeName,
                                   ),
@@ -235,8 +224,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 AppTextField(
                                   label: 'Nombre:',
                                   icon: Icons.account_circle_outlined,
-                                  textCapitalization:
-                                      TextCapitalization.words,
+                                  textCapitalization: TextCapitalization.words,
                                   controller: nombreController,
                                   onChanged: bloc.changeName,
                                 ),
@@ -246,8 +234,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 AppTextField(
                                   label: 'Apellido:',
                                   icon: Icons.abc_outlined,
-                                  textCapitalization:
-                                      TextCapitalization.words,
+                                  textCapitalization: TextCapitalization.words,
                                   controller: apellidoController,
                                   onChanged: bloc.changeLastname,
                                 ),
@@ -257,13 +244,25 @@ class _RegisterPageState extends State<RegisterPage> {
                           const SizedBox(height: 14),
 
                           // ===================================
+                          // TELÉFONO
+                          // ===================================
+                          AppTextField(
+                            label: 'Teléfono:',
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                            controller: phoneController,
+                            onChanged: bloc.changePhone,
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          // ===================================
                           // EMAIL
                           // ===================================
                           AppTextField(
                             label: 'E-mail:',
                             icon: Icons.email_outlined,
-                            keyboardType:
-                                TextInputType.emailAddress,
+                            keyboardType: TextInputType.emailAddress,
                             controller: emailController,
                             onChanged: bloc.changeEmail,
                           ),
@@ -334,13 +333,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           // BOTÓN REGISTRARSE
                           // ===================================
                           AppButton(
-                            text: isLoading
-                                ? 'Registrando...'
-                                : 'Registrarse',
+                            text: isLoading ? 'Registrando...' : 'Registrarse',
 
                             onPressed: isLoading || !formularioValido
-                                    ? null
-                                    : registrarUsuario,                            
+                                ? null
+                                : registrarUsuario,
                           ),
 
                           const SizedBox(height: 5),
@@ -350,7 +347,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           // ===================================
                           TextButton(
                             onPressed: () {
-                              Navigator.pushNamed(context, AppRoutes.login,);
+                              Navigator.pushNamed(context, AppRoutes.login);
                             },
                             child: const Text(
                               'Iniciar de Sesión',

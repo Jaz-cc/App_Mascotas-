@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/models/mascota.dart';
+import 'package:jamikapet/src/models/vacuna.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
+import 'package:jamikapet/src/services/mascota_service.dart';
+import 'package:jamikapet/src/services/vacuna.dart';
 
 class VacunasScreen extends StatefulWidget {
   const VacunasScreen({super.key});
@@ -10,151 +14,93 @@ class VacunasScreen extends StatefulWidget {
   State<VacunasScreen> createState() => _VacunasScreenState();
 }
 
-class _Mascota {
-  final String nombre;
-  final IconData icono; // representa la especie
-  const _Mascota(this.nombre, this.icono);
-}
-
-class _Vacuna {
-  final String nombre;
-  final String descripcion;
-  final String fecha;
-  final String estado; // "Aplicada" | "Próxima dosis" | "No aplicada"
-  final String mascota;
-
-  const _Vacuna({
-    required this.nombre,
-    required this.descripcion,
-    required this.fecha,
-    required this.estado,
-    required this.mascota,
-  });
-}
-
 class _VacunasScreenState extends State<VacunasScreen> {
-  String mascotaSeleccionada = "Luna";
+  List<Mascota> _mascotas = [];
+  Mascota? _seleccionada;
+  List<Vacuna> _vacunas = [];
 
-  final List<_Mascota> mascotas = const [
-    _Mascota("Luna", Icons.pets),
-    _Mascota("Milo", Icons.pets),
-  ];
+  bool _cargandoMascotas = true;
+  bool _cargandoVacunas = false;
+  String? _error;
 
-  final List<_Vacuna> vacunas = const [
-    _Vacuna(
-      nombre: "Rabia",
-      descripcion: "Previene la rabia en perros y gatos.",
-      fecha: "12/03/2025",
-      estado: "Aplicada",
-      mascota: "Luna",
-    ),
-    _Vacuna(
-      nombre: "Parvovirus",
-      descripcion: "Previene el parvovirus canino.",
-      fecha: "15/04/2025",
-      estado: "Aplicada",
-      mascota: "Luna",
-    ),
-    _Vacuna(
-      nombre: "Moquillo",
-      descripcion: "Protege contra el virus del moquillo.",
-      fecha: "15/04/2025",
-      estado: "Aplicada",
-      mascota: "Luna",
-    ),
-    _Vacuna(
-      nombre: "Leptospirosis",
-      descripcion: "Protege contra bacterias de leptospira.",
-      fecha: "10/05/2025",
-      estado: "Próxima dosis",
-      mascota: "Luna",
-    ),
-    _Vacuna(
-      nombre: "Triple felina (FVRCP)",
-      descripcion: "Previene rinotraqueítis, calicivirus y panleucopenia.",
-      fecha: "20/03/2025",
-      estado: "Aplicada",
-      mascota: "Milo",
-    ),
-    _Vacuna(
-      nombre: "Leucemia felina",
-      descripcion: "Protege contra el virus de la leucemia felina.",
-      fecha: "02/06/2025",
-      estado: "No aplicada",
-      mascota: "Milo",
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _cargarInicial();
+  }
 
-  List<_Vacuna> get _vacunasFiltradas =>
-      vacunas.where((v) => v.mascota == mascotaSeleccionada).toList();
+  Future<String?> _obtenerToken() async => null;
 
-  Future<void> _abrirSelectorMascotas() async {
-    final elegido = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.white,      
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: _Paleta.borde,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-                const Text(
-                  "Ver vacunas de",
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: _Paleta.tinta,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...mascotas.map((m) {
-                  final activa = m.nombre == mascotaSeleccionada;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: _Paleta.verdeMuyClaro,
-                      child: Icon(m.icono, color: _Paleta.primarioOscuro),
-                    ),
-                    title: Text(
-                      m.nombre,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight:
-                            activa ? FontWeight.w700 : FontWeight.w500,
-                        color: _Paleta.tinta,
-                      ),
-                    ),
-                    trailing: activa
-                        ? const Icon(Icons.check_rounded,
-                            color: _Paleta.primarioOscuro)
-                        : null,
-                    onTap: () => Navigator.pop(context, m.nombre),
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _cargarInicial() async {
+    setState(() {
+      _cargandoMascotas = true;
+      _error = null;
+    });
 
-    if (elegido != null) {
-      setState(() => mascotaSeleccionada = elegido);
+    try {
+      final token = await _obtenerToken();
+      final mascotas = await MascotaService(token: token).obtenerMascotas();
+      if (!mounted) return;
+
+      setState(() {
+        _mascotas = mascotas;
+        // Conserva la selección si sigue existiendo; si no, toma la primera.
+        _seleccionada = mascotas.isEmpty
+            ? null
+            : mascotas.firstWhere(
+                (m) => m.id == _seleccionada?.id,
+                orElse: () => mascotas.first,
+              );
+      });
+
+      if (_seleccionada != null) {
+        await _cargarVacunas();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _cargandoMascotas = false);
     }
   }
+
+  Future<void> _cargarVacunas() async {
+    final mascota = _seleccionada;
+    if (mascota == null) return;
+
+    setState(() {
+      _cargandoVacunas = true;
+      _error = null;
+    });
+
+    try {
+      final service = VacunaService(token: await _obtenerToken());
+      final lista = await service.obtenerVacunas(mascota.id);
+      if (!mounted || _seleccionada?.id != mascota.id) return; // cambió de mascota
+      setState(() => _vacunas = lista);
+    } catch (e) {
+      if (!mounted || _seleccionada?.id != mascota.id) return;
+      setState(() {
+        _vacunas = [];
+        _error = e.toString();
+      });
+    } finally {
+      if (mounted && _seleccionada?.id == mascota.id) {
+        setState(() => _cargandoVacunas = false);
+      }
+    }
+  }
+
+  void _seleccionarMascota(Mascota m) {
+    if (m.id == _seleccionada?.id) return;
+    setState(() {
+      _seleccionada = m;
+      _vacunas = [];
+    });
+    _cargarVacunas();
+  }
+
+  // ---------------- BUILD ----------------
 
   @override
   Widget build(BuildContext context) {
@@ -164,55 +110,46 @@ class _VacunasScreenState extends State<VacunasScreen> {
         titulo: 'Vacunas',
         mostrarLogo: true,
         mostrarRegreso: true,
-        icon: Icons.clean_hands_outlined,
       ),
       body: Column(
         children: [
-          // Contenido de la pantalla
           Expanded(
             child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _encabezadoLogo(),
-                    const SizedBox(height: 22),
-                    _tarjetaTitulo(),
-                    const SizedBox(height: 18),
-                    _selectorMascotas(),
-                    const SizedBox(height: 18),
-                    if (_vacunasFiltradas.isEmpty)
-                      _estadoVacio()
-                    else
-                      ..._vacunasFiltradas.map(_tarjetaVacuna),
-                  ],
+              child: RefreshIndicator(
+                color: _Paleta.primarioOscuro,
+                onRefresh: _cargarInicial,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _encabezadoLogo(),
+                      const SizedBox(height: 22),
+                      _tarjetaTitulo(),
+                      const SizedBox(height: 18),
+                      ..._contenido(),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          
-          // ===============================================================
-          // PIE DE PÁGINA / BARRA INFERIOR
-          // ===============================================================
           AppBottomNavigation(
             currentIndex: 1,
             onItemSelected: (index) {
               switch (index) {
                 case 0:
-                  Navigator.pushNamed(context, AppRoutes.home,);
-                    break;
-
+                  Navigator.pushNamed(context, AppRoutes.home);
+                  break;
                 case 1:
-                  Navigator.pushNamed(context, AppRoutes.menu,);
+                  Navigator.pushNamed(context, AppRoutes.menu);
                   break;
-
                 case 2:
-                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  Navigator.pushNamed(context, AppRoutes.petProfile);
                   break;
-
                 case 3:
-                  Navigator.pushNamed(context, AppRoutes.perfil,);
+                  Navigator.pushNamed(context, AppRoutes.perfil);
                   break;
               }
             },
@@ -222,14 +159,75 @@ class _VacunasScreenState extends State<VacunasScreen> {
     );
   }
 
-  // ===============================================================
-  // ENCABEZADO CON LOGO
-  // ===============================================================
+  List<Widget> _contenido() {
+    if (_cargandoMascotas) {
+      return [_cargando()];
+    }
+
+    if (_error != null && _mascotas.isEmpty) {
+      return [
+        _mensajeCard(
+          icono: Icons.cloud_off_rounded,
+          titulo: 'No pudimos cargar la información',
+          detalle: _error!,
+          accion: TextButton.icon(
+            onPressed: _cargarInicial,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reintentar'),
+          ),
+        ),
+      ];
+    }
+
+    if (_mascotas.isEmpty) {
+      return [
+        _mensajeCard(
+          icono: Icons.pets_rounded,
+          titulo: 'Aún no tienes mascotas',
+          detalle: 'Registra una mascota para ver su esquema de vacunación.',
+        ),
+      ];
+    }
+
+    return [
+      _selectorMascotas(),
+      const SizedBox(height: 18),
+      if (_cargandoVacunas)
+        _cargando()
+      else if (_error != null)
+        _mensajeCard(
+          icono: Icons.cloud_off_rounded,
+          titulo: 'No pudimos cargar las vacunas',
+          detalle: _error!,
+          accion: TextButton.icon(
+            onPressed: _cargarVacunas,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reintentar'),
+          ),
+        )
+      else if (_vacunas.isEmpty)
+        _mensajeCard(
+          icono: Icons.vaccines_outlined,
+          titulo: 'Sin vacunas registradas',
+          detalle: 'Aún no hay vacunas para ${_seleccionada!.nombre}.',
+        )
+      else
+        ..._vacunas.map(_tarjetaVacuna),
+    ];
+  }
+
+  Widget _cargando() => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(
+          child: CircularProgressIndicator(color: _Paleta.primarioOscuro),
+        ),
+      );
+
+  // ---------------- ENCABEZADO ----------------
   Widget _encabezadoLogo() {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Decoración de huellitas, sutil, no interactiva.
         Positioned(
           top: -6,
           right: -10,
@@ -292,9 +290,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
     );
   }
 
-  // ===============================================================
-  // TARJETA TÍTULO
-  // ===============================================================
+  // ---------------- TARJETA TÍTULO ----------------
   Widget _tarjetaTitulo() {
     return Container(
       width: double.infinity,
@@ -320,11 +316,8 @@ class _VacunasScreenState extends State<VacunasScreen> {
               color: _Paleta.verdeMuyClaro,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.vaccines,
-              color: _Paleta.primarioOscuro,
-              size: 27,
-            ),
+            child: const Icon(Icons.vaccines,
+                color: _Paleta.primarioOscuro, size: 27),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -356,97 +349,86 @@ class _VacunasScreenState extends State<VacunasScreen> {
     );
   }
 
-  // ===============================================================
-  // SELECTOR DE MASCOTAS
-  // ===============================================================
+  // ---------------- SELECTOR DE MASCOTAS ----------------
+  IconData _iconoMascota(Mascota m) =>
+      m.tipo.toLowerCase() == 'gato' ? Icons.pets : Icons.pets;
+
   Widget _selectorMascotas() {
-    return Row(
-      children: mascotas.map((m) {
-        final seleccionada = m.nombre == mascotaSeleccionada;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: m == mascotas.first ? 10 : 0,
-            ),
-            child: Semantics(
-              button: true,
-              selected: seleccionada,
-              label: "Ver vacunas de ${m.nombre}",
-              child: InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: () => setState(() => mascotaSeleccionada = m.nombre),
-                child: Container(
-                  height: 46,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: seleccionada ? _Paleta.verdeMuyClaro : Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: seleccionada
-                          ? _Paleta.primarioOscuro
-                          : _Paleta.borde,
-                      width: seleccionada ? 1.6 : 1,
+    return SizedBox(
+      height: 46,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _mascotas.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (_, i) {
+          final m = _mascotas[i];
+          final seleccionada = m.id == _seleccionada?.id;
+
+          return Semantics(
+            button: true,
+            selected: seleccionada,
+            label: "Ver vacunas de ${m.nombre}",
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () => _seleccionarMascota(m),
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 110),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: seleccionada ? _Paleta.verdeMuyClaro : Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: seleccionada ? _Paleta.primarioOscuro : _Paleta.borde,
+                    width: seleccionada ? 1.6 : 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_iconoMascota(m),
+                        size: 18, color: _Paleta.primarioOscuro),
+                    const SizedBox(width: 8),
+                    Text(
+                      m.nombre,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight:
+                            seleccionada ? FontWeight.w700 : FontWeight.w500,
+                        color: _Paleta.tinta,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(m.icono, size: 18, color: _Paleta.primarioOscuro),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          m.nombre,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: seleccionada
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: _Paleta.tinta,
-                          ),
-                        ),
-                      ),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: _abrirSelectorMascotas,
-                        child: const Padding(
-                          padding: EdgeInsets.all(2),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 18,
-                            color: _Paleta.tintaSuave,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        },
+      ),
     );
   }
 
-  // ===============================================================
-  // ESTADO VACÍO
-  // ===============================================================
-  Widget _estadoVacio() {
+  // ---------------- MENSAJES (vacío / error) ----------------
+  Widget _mensajeCard({
+    required IconData icono,
+    required String titulo,
+    required String detalle,
+    Widget? accion,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 44),
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: [
-          const Icon(Icons.vaccines_outlined,
-              size: 40, color: _Paleta.tintaSuave),
+          Icon(icono, size: 40, color: _Paleta.tintaSuave),
           const SizedBox(height: 10),
-          const Text(
-            "Sin vacunas registradas",
-            style: TextStyle(
+          Text(
+            titulo,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: _Paleta.tinta,
@@ -454,21 +436,23 @@ class _VacunasScreenState extends State<VacunasScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "Agrega la primera vacuna de $mascotaSeleccionada",
+            detalle,
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
           ),
+          if (accion != null) ...[
+            const SizedBox(height: 12),
+            accion,
+          ],
         ],
       ),
     );
   }
 
-  // ===============================================================
-  // TARJETA DE VACUNA
-  // ===============================================================
-  Widget _tarjetaVacuna(_Vacuna vacuna) {
+  // ---------------- TARJETA DE VACUNA ----------------
+  Widget _tarjetaVacuna(Vacuna vacuna) {
     final estilo = _estiloEstado(vacuna.estado);
-    final mascota =
-        mascotas.firstWhere((m) => m.nombre == vacuna.mascota);
+    final mascota = _seleccionada!;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -494,11 +478,8 @@ class _VacunasScreenState extends State<VacunasScreen> {
               color: _Paleta.verdeMuyClaro,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.vaccines,
-              color: _Paleta.primarioOscuro,
-              size: 24,
-            ),
+            child: const Icon(Icons.vaccines,
+                color: _Paleta.primarioOscuro, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -520,7 +501,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      vacuna.fecha,
+                      vacuna.fechaFormateada,
                       style: const TextStyle(
                         fontSize: 12,
                         color: _Paleta.tintaSuave,
@@ -528,23 +509,23 @@ class _VacunasScreenState extends State<VacunasScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  vacuna.descripcion,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    height: 1.3,
-                    color: _Paleta.tintaSuave,
+                if (vacuna.descripcion.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    vacuna.descripcion,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      height: 1.3,
+                      color: _Paleta.tintaSuave,
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 10),
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: estilo.color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
@@ -555,7 +536,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
                           Icon(estilo.icono, size: 13, color: estilo.color),
                           const SizedBox(width: 4),
                           Text(
-                            vacuna.estado,
+                            vacuna.estado.etiqueta,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -566,15 +547,13 @@ class _VacunasScreenState extends State<VacunasScreen> {
                       ),
                     ),
                     const Spacer(),
-                    Icon(mascota.icono,
+                    Icon(_iconoMascota(mascota),
                         size: 14, color: _Paleta.tintaSuave),
                     const SizedBox(width: 4),
                     Text(
                       mascota.nombre,
                       style: const TextStyle(
-                        fontSize: 12,
-                        color: _Paleta.tintaSuave,
-                      ),
+                          fontSize: 12, color: _Paleta.tintaSuave),
                     ),
                   ],
                 ),
@@ -582,27 +561,23 @@ class _VacunasScreenState extends State<VacunasScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: _Paleta.primario,
-            size: 22,
-          ),
+          const Icon(Icons.chevron_right_rounded,
+              color: _Paleta.primario, size: 22),
         ],
       ),
     );
   }
 
-  _EstiloEstado _estiloEstado(String estado) {
+  _EstiloEstado _estiloEstado(EstadoVacuna estado) {
     switch (estado) {
-      case "Aplicada":
+      case EstadoVacuna.aplicada:
         return const _EstiloEstado(_Paleta.aplicada, Icons.check_rounded);
-      case "Próxima dosis":
+      case EstadoVacuna.proximaDosis:
         return const _EstiloEstado(_Paleta.proxima, Icons.schedule_rounded);
-      default:
+      case EstadoVacuna.noAplicada:
         return const _EstiloEstado(_Paleta.pendiente, Icons.error_rounded);
     }
   }
-
 }
 
 class _EstiloEstado {
