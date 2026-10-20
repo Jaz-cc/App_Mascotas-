@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:jamikapet/src/services/pets_service.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 
 /// Paleta de la pantalla
@@ -32,6 +33,7 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
 
   String genero = "Macho";
   String tipoMascota = "";
+  bool _guardando = false;
 
   @override
   void dispose() {
@@ -42,23 +44,62 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
     super.dispose();
   }
 
-  void registrarMascota() {
+  Future<void> registrarMascota() async {
     FocusScope.of(context).unfocus();
+
+    if (_guardando) return;
 
     if (!(_formKey.currentState?.validate() ?? false)) {
       _mostrarMensaje("Revisa los campos marcados", esError: true);
       return;
     }
 
-    // Aquí posteriormente guardaremos la mascota
-    debugPrint("Nombre: ${nombreController.text.trim()}");
-    debugPrint("Género: $genero");
-    debugPrint("Tipo de Mascota: $tipoMascota");
-    debugPrint("Raza: ${razaController.text}");
-    debugPrint("Peso: ${pesoController.text} kg");
-    debugPrint("Edad: ${edadController.text}");
+    final edad = int.parse(edadController.text.trim());
+    final peso = double.parse(
+      pesoController.text.trim().replaceAll(',', '.'),
+    );
 
-    _mostrarMensaje("Mascota registrada correctamente 🐾");
+    if (edad < 0 || peso <= 0) {
+      _mostrarMensaje("Verifica la edad y el peso", esError: true);
+      return;
+    } 
+
+    setState(() => _guardando = true);
+
+    try {
+      await PetsService.registrarMascota(
+        nombre: nombreController.text.trim(),
+        especie: tipoMascota,
+        raza: razaController.text.trim(),
+        sexo: genero,
+        edad: edad,
+        peso: peso,
+      );
+
+      if (!mounted) return;
+      _mostrarMensaje("Mascota registrada correctamente 🐾");
+      // El formulario queda limpio tras confirmar que el backend guardó la mascota.
+      _formKey.currentState?.reset();
+      nombreController.clear();
+      razaController.clear();
+      edadController.clear();
+      pesoController.clear();
+      setState(() {
+        tipoMascota = "";
+        genero = "Macho";
+      });
+    } on PetsServiceException catch (e) {
+      if (!mounted) return;
+      _mostrarMensaje(e.message, esError: true);
+    } catch (_) {
+      if (!mounted) return;
+      _mostrarMensaje(
+        "No se pudo registrar la mascota. Verifica tu conexión e inténtalo de nuevo.",
+        esError: true,
+      );
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
   }
 
   void _mostrarMensaje(String texto, {bool esError = false}) {
@@ -356,7 +397,7 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
                                 width: double.infinity,
                                 height: 52,
                                 child: ElevatedButton(
-                                  onPressed: registrarMascota,
+                                  onPressed: _guardando ? null : registrarMascota,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: _Paleta.primario,
                                     foregroundColor: _Paleta.tinta,
@@ -365,13 +406,24 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  child: const Text(
-                                    "Registrar mascota",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                                  child: _guardando
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              _Paleta.tinta,
+                                            ),
+                                          ),
+                                        )
+                                      : const Text(
+                                          "Registrar mascota",
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
                                 ),
                               ),
                             ],
