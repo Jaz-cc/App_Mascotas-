@@ -28,7 +28,7 @@ class _PetProfilePageState extends State<PetProfilePage> {
     _cargarMascotas();
   }
 
-  // TODO: reemplaza por donde guardes tu token (secure storage, provider, etc.)
+  //TODO: reemplaza por donde guardes tu token (secure storage, provider, etc.)
   Future<String?> _obtenerToken() async => null;
 
   Future<void> _cargarMascotas() async {
