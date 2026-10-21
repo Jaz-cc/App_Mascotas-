@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:jamikapet/src/core/network/api_config.dart';
 import 'package:jamikapet/src/core/storage/token_storage.dart';
@@ -37,7 +38,6 @@ class PetsService {
     };
   }
 
-    /// Convierte una ruta de foto en una URL completa.
   /// Convierte la ruta de la imagen en una URL completa.
   static String? urlFoto(String? image) {
     if (image == null || image.trim().isEmpty) {
@@ -69,17 +69,18 @@ class PetsService {
     required String sexo,
     required int edad,
     required double peso,
+    XFile? imagen,
   }) async {
 
     final token = await TokenStorage.getToken();
 
-    if (token == null) {
+    if (token == null || token.isEmpty) {
       throw const PetsServiceException(
         'Tu sesión no tiene un token guardado. Cierra sesión e inicia sesión nuevamente.',
       );
     }
 
-    Uri.parse('${ApiConfig.baseUrl}/pets');
+   
     final body = <String, dynamic>{
       'nombrePet': nombre,
       'especie': especie,
@@ -88,6 +89,12 @@ class PetsService {
       'edad': edad,
       'peso': peso,
     };
+
+    if (imagen != null) {
+      body['image'] = await subirImagenMascota(
+        imagen: imagen,
+      );
+    }
 
     late http.Response response;
     try {
@@ -142,7 +149,79 @@ class PetsService {
     throw PetsServiceException(message);
   }
 
-  /// Obtiene todas las mascotas del usuario autenticado.
+  // ACTIALIZAR MASCOTA
+  static Future<Map<String, dynamic>> actualizarMascota({
+    required int id,
+    required String nombre,
+    required String especie,
+    required String raza,
+    required String sexo,
+    required int edad,
+    required double peso,
+    XFile? nuevaImagen,
+  }) async {
+    final headers = await _obtenerHeaders();
+
+    final body = <String, dynamic>{
+      'nombrePet': nombre,
+      'especie': especie,
+      'raza': raza,
+      'sexo': sexo,
+      'edad': edad,
+      'peso': peso,
+    };
+
+    if (nuevaImagen != null) {
+      body['image'] = await subirImagenMascota(
+        imagen: nuevaImagen,
+      );
+    }
+
+    final baseUrl = ApiConfig.baseUrl.replaceFirst(
+      RegExp(r'/$'),
+      '',
+    );
+
+    try {
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/pets/$id'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 200 ||
+          response.statusCode == 201) {
+        final decoded = jsonDecode(
+          utf8.decode(response.bodyBytes),
+        );
+
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+
+        return <String, dynamic>{};
+      }
+
+      throw PetsServiceException(
+        _mensajeError(
+          response,
+          'No se pudo actualizar la mascota.',
+        ),
+      );
+    } on TimeoutException {
+      throw const PetsServiceException(
+        'El servidor tardó demasiado en responder.',
+      );
+    } on http.ClientException {
+      throw const PetsServiceException(
+        'No se pudo conectar con el servidor.',
+      );
+    }
+  }
+
+  // Obtiene todas las mascotas del usuario autenticado.
   static Future<List<Mascota>> obtenerMascotas() async {
      final headers = await _obtenerHeaders();
 
@@ -193,28 +272,134 @@ class PetsService {
 
       rethrow;
 
-    } on SocketException {
-
+    } on http.ClientException {
       throw const PetsServiceException(
-        'Sin conexión con el servidor.',
+        'No se pudo conectar con el servidor.',
       );
-
-    } on TimeoutException {
-
-      throw const PetsServiceException(
-        'El servidor tardó demasiado en responder.',
-      );
-
-    } on FormatException {
-
-      throw const PetsServiceException(
-        'El servidor devolvió una respuesta inválida.',
-      );
-
     }
   }
 
+  // SUBIR FOTO A CLOUDINARY
+  static Future<String> subirImagenMascota({
+    required XFile imagen,
+  }) async {
+    final headers = await _obtenerHeaders();
 
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl.replaceFirst(RegExp(r'/$'), '')}/pets/upload-image',
+    );
+
+    try {
+      // Leer la imagen como bytes funciona en Web y móvil.
+      final bytes = await imagen.readAsBytes();
+
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers['Accept'] = 'application/json';
+      request.headers['Authorization'] = headers['Authorization']!;
+
+      final nombre = imagen.name.toLowerCase();
+
+      final MediaType tipoContenido;
+
+      if (nombre.endsWith('.jpg') || nombre.endsWith('.jpeg')) {
+        tipoContenido = MediaType('image', 'jpeg');
+      } else if (nombre.endsWith('.png')) {
+        tipoContenido = MediaType('image', 'png');
+      } else if (nombre.endsWith('.webp')) {
+        tipoContenido = MediaType('image', 'webp');
+      } else {
+        throw const PetsServiceException(
+          'Formato no compatible. Selecciona JPG, PNG o WEBP.',
+        );
+      }
+
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'image',
+          bytes,
+          filename: imagen.name,
+          contentType: tipoContenido,
+        ),
+      );
+
+      final streamedResponse = await request
+          .send()
+          .timeout(ApiConfig.timeout);
+
+      final response = await http.Response.fromStream(
+        streamedResponse,
+      );
+
+      if (response.statusCode != 200 &&
+          response.statusCode != 201) {
+        throw PetsServiceException(
+          _mensajeError(
+            response,
+            'No se pudo subir la imagen a Cloudinary.',
+          ),
+        );
+      }
+
+      final data = jsonDecode(
+        utf8.decode(response.bodyBytes),
+      ) as Map<String, dynamic>;
+
+      final imageUrl = data['image'] as String?;
+
+      if (imageUrl == null || imageUrl.isEmpty) {
+        throw const PetsServiceException(
+          'El backend no devolvió la URL de la imagen.',
+        );
+      }
+
+      return imageUrl;
+    } on TimeoutException {
+      throw const PetsServiceException(
+        'La subida de la imagen tardó demasiado.',
+      );
+    } on http.ClientException {
+      throw const PetsServiceException(
+        'No se pudo conectar con el servidor.',
+      );
+    } on FormatException {
+      throw const PetsServiceException(
+        'El servidor devolvió una respuesta inválida.',
+      );
+    }
+  }
+
+  //  ELIMINAR MASCOTA
+  static Future<void> eliminarMascota({
+    required int id,
+  }) async {
+    final headers = await _obtenerHeaders();
+    final baseUrl = ApiConfig.baseUrl.replaceFirst(
+      RegExp(r'/$'),
+      '',
+    );
+
+    final response = await http
+        .delete(
+          Uri.parse('$baseUrl/pets/$id'),
+          headers: headers,
+        )
+        .timeout(ApiConfig.timeout);
+
+    if (response.statusCode == 200 ||
+        response.statusCode == 204) {
+      return;
+    }
+
+    throw PetsServiceException(
+      _mensajeError(
+        response,
+        'No se pudo eliminar la mascota.',
+      ),
+    );
+  }
+  
+  //  MENSAJE DE ERROR
   static String _mensajeError(
     http.Response response,
     String porDefecto,

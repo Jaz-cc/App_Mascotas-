@@ -1,22 +1,22 @@
 
 class Mascota {
   final int id;
-  final int usuarioId;
-  final String nombre;
-  final String tipo;
+  final int userId;
+  final String nombrePet;
+  final String especie;
   final String raza;
-  final String genero;
+  final String sexo;
   final int edad;
   final double peso;
   final String? image;
 
   const Mascota({
     required this.id,
-    required this.usuarioId,
-    required this.nombre,
-    required this.tipo,
+    required this.userId,
+    required this.nombrePet,
+    required this.especie,
     required this.raza,
-    required this.genero,
+    required this.sexo,
     required this.edad,
     required this.peso,
     this.image,
@@ -25,16 +25,17 @@ class Mascota {
   factory Mascota.fromJson(Map<String, dynamic> json) {
     return Mascota(
       id: _int(json['id']),
-      usuarioId: _int(
+      userId: _int(
         json['usuarioId'] ?? json['usuario_id'],
       ),
-      nombre: (json['nombre'] ?? '').toString(),
-      tipo: (json['tipo'] ?? '').toString(),
+      nombrePet: (json['nombrePet'] ?? '').toString(),
+      especie: (json['especie'] ?? '').toString(),
       raza: (json['raza'] ?? '').toString(),
-      genero: (json['genero'] ?? '').toString(),
+      sexo: (json['sexo'] ?? '').toString(),
       edad: _int(json['edad']),
       peso: _double(json['peso']),
       image: _foto(
+        json['image'] ??
         json['fotoUrl'] ??
         json['foto_url'] ??
         json['imageUrl'] ??
@@ -45,14 +46,14 @@ class Mascota {
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'user_id': usuarioId,
-        'nombrePet': nombre,
-        'tipo': tipo,
+        'nombrePet': nombrePet,
+        'especie': especie,
         'raza': raza,
-        'genero': genero,
+        'sexo': sexo,
         'edad': edad,
         'peso': peso,
         'image': image,
+        'user_id': userId,
       };
 
   static int _int(dynamic value) {
