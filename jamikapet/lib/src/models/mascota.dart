@@ -8,7 +8,7 @@ class Mascota {
   final String genero;
   final int edad;
   final double peso;
-  final String? fotoUrl;
+  final String? image;
 
   const Mascota({
     required this.id,
@@ -19,7 +19,7 @@ class Mascota {
     required this.genero,
     required this.edad,
     required this.peso,
-    this.fotoUrl,
+    this.image,
   });
 
   factory Mascota.fromJson(Map<String, dynamic> json) {
@@ -34,7 +34,7 @@ class Mascota {
       genero: (json['genero'] ?? '').toString(),
       edad: _int(json['edad']),
       peso: _double(json['peso']),
-      fotoUrl: _foto(
+      image: _foto(
         json['fotoUrl'] ??
         json['foto_url'] ??
         json['imageUrl'] ??
@@ -45,14 +45,14 @@ class Mascota {
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'usuarioId': usuarioId,
-        'nombre': nombre,
+        'user_id': usuarioId,
+        'nombrePet': nombre,
         'tipo': tipo,
         'raza': raza,
         'genero': genero,
         'edad': edad,
         'peso': peso,
-        'fotoUrl': fotoUrl,
+        'image': image,
       };
 
   static int _int(dynamic value) {

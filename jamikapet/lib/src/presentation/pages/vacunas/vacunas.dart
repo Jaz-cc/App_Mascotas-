@@ -4,7 +4,7 @@ import 'package:jamikapet/src/models/vacuna.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
-import 'package:jamikapet/src/services/mascota_service.dart';
+import 'package:jamikapet/src/services/pets_service.dart';
 import 'package:jamikapet/src/services/vacuna.dart';
 
 class VacunasScreen extends StatefulWidget {
@@ -31,6 +31,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
 
   Future<String?> _obtenerToken() async => null;
 
+  
   Future<void> _cargarInicial() async {
     setState(() {
       _cargandoMascotas = true;
@@ -38,19 +39,21 @@ class _VacunasScreenState extends State<VacunasScreen> {
     });
 
     try {
-      final token = await _obtenerToken();
-      final mascotas = await MascotaService(token: token).obtenerMascotas();
+      final mascotas = await PetsService.obtenerMascotas();
+
       if (!mounted) return;
 
       setState(() {
         _mascotas = mascotas;
-        // Conserva la selección si sigue existiendo; si no, toma la primera.
+
         _seleccionada = mascotas.isEmpty
             ? null
             : mascotas.firstWhere(
                 (m) => m.id == _seleccionada?.id,
                 orElse: () => mascotas.first,
               );
+
+        _vacunas = [];
       });
 
       if (_seleccionada != null) {
@@ -58,12 +61,20 @@ class _VacunasScreenState extends State<VacunasScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+
+      setState(() {
+        _error = e.toString();
+      });
     } finally {
-      if (mounted) setState(() => _cargandoMascotas = false);
+      if (mounted) {
+        setState(() {
+          _cargandoMascotas = false;
+        });
+      }
     }
   }
 
+    
   Future<void> _cargarVacunas() async {
     final mascota = _seleccionada;
     if (mascota == null) return;
@@ -359,7 +370,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _mascotas.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (_, i) {
           final m = _mascotas[i];
           final seleccionada = m.id == _seleccionada?.id;

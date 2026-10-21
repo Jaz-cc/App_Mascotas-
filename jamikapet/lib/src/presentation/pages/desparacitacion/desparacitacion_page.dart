@@ -5,7 +5,7 @@ import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/services/desparacitacion_service.dart';
-import 'package:jamikapet/src/services/mascota_service.dart';
+import 'package:jamikapet/src/services/pets_service.dart';
 
 class DewormingPage extends StatefulWidget {
   const DewormingPage({super.key});
@@ -37,8 +37,8 @@ class _DewormingPageState extends State<DewormingPage> {
     });
 
     try {
-      final token = await _obtenerToken();
-      final mascotas = await MascotaService(token: token).obtenerMascotas();
+      
+      final mascotas = await PetsService.obtenerMascotas();
       if (!mounted) return;
 
       setState(() {

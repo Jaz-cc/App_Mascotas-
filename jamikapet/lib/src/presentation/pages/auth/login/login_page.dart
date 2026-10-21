@@ -192,13 +192,13 @@ class _LoginContentState extends State<_LoginContent> {
                               return AppButton(
                                 text: isLoading ? 'Cargando...' : 'Ingresar',
                                 onPressed: isLoading
-                                    ? null
-                                    : () {
-                                        context.read<LoginCubit>().login(
-                                              _emailController.text.trim(),
-                                              _passwordController.text,
-                                            );
-                                      },
+                                  ? null
+                                  : () {
+                                      context.read<LoginCubit>().login(
+                                        _emailController.text.trim(),
+                                        _passwordController.text,
+                                      );
+                                    },
                               );
                             },
                           ),

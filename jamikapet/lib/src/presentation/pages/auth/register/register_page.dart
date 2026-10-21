@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
 import 'dart:async';
-
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/pages/auth/register/register_bloc_cubit.dart';
 import 'package:jamikapet/src/presentation/widgets/app_text_field.dart';

@@ -1,6 +1,6 @@
 name: jamikapet
 description: "A new Flutter project."
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.13.4
@@ -15,11 +15,8 @@ dependencies:
   url_launcher: ^6.3.2
   firebase_core: ^5.0.0
   http: ^1.6.0
-<<<<<<< Updated upstream
-=======
   flutter_secure_storage: ^11.2.0
   image_picker: ^1.2.4
->>>>>>> Stashed changes
 
 
 dev_dependencies:

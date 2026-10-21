@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:jamikapet/src/models/usuario.dart';
+import 'package:jamikapet/src/core/network/api_config.dart';
 
 class AuthException implements Exception {
   final String mensaje;
@@ -14,9 +15,10 @@ class AuthException implements Exception {
 }
 
 class AuthService {
-  static const String baseUrl = 'http://10.0.2.2:3000/api/auth';
+  final uri = Uri.parse('${ApiConfig.baseUrl}/auth');
   static const Duration _timeout = Duration(seconds: 15);
 
+  // REGISTRO DE USUARIO
   Future<Usuario> registrarUsuario({
     required String nombre,
     required String apellido,
@@ -27,7 +29,7 @@ class AuthService {
     try {
       final response = await http
           .post(
-            Uri.parse('$baseUrl/register'),
+            Uri.parse('$uri/register'),
             headers: const {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
@@ -86,6 +88,70 @@ class AuthService {
       throw const AuthException('El servidor devolvió una respuesta inválida.');
     }
   }
+
+  // INICIO DE SESIÓN
+  Future<Map<String, dynamic>> iniciarSesion({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$uri/login'),
+            headers: const {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'email': email.trim(),
+              'password': password,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode != 200 &&
+          response.statusCode != 201) {
+        throw AuthException(
+          _mensajeError(
+            response,
+            'No se pudo iniciar sesión.',
+          ),
+        );
+      }
+
+      if (response.bodyBytes.isEmpty) {
+        throw const AuthException(
+          'El servidor devolvió una respuesta vacía.',
+        );
+      }
+
+      final dynamic data =
+          jsonDecode(utf8.decode(response.bodyBytes));
+
+      if (data is! Map) {
+        throw const AuthException(
+          'El servidor devolvió una respuesta inválida.',
+        );
+      }
+
+      return Map<String, dynamic>.from(data);
+    } on AuthException {
+      rethrow;
+    } on SocketException {
+      throw const AuthException(
+        'No hay conexión con el servidor.',
+      );
+    } on TimeoutException {
+      throw const AuthException(
+        'El servidor tardó demasiado en responder.',
+      );
+    } on FormatException {
+      throw const AuthException(
+        'El servidor devolvió una respuesta inválida.',
+      );
+    }
+  }
+
 
   String _mensajeError(http.Response response, String porDefecto) {
     try {

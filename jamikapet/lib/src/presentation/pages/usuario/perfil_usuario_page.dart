@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';  
+import 'package:jamikapet/src/core/storage/token_storage.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   const PerfilUsuarioPage({super.key});
@@ -12,8 +13,16 @@ class PerfilUsuarioPage extends StatefulWidget {
 
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
-  void cerrarSesion(BuildContext context) {
-    Navigator.pushNamed(context, AppRoutes.login);
+  Future<void> cerrarSesion() async {
+    await TokenStorage.clearToken();
+
+    if (!mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.login,
+      (route) => false,
+    );
   }
 
   @override
@@ -217,9 +226,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                       width: 250,
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          cerrarSesion(context);
-                        },
+                        onPressed: cerrarSesion,
                         icon: const Icon(
                           Icons.logout,
                           color: Colors.white,

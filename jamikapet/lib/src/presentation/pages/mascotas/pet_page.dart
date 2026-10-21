@@ -3,7 +3,8 @@ import 'package:jamikapet/src/models/mascota.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
-import 'package:jamikapet/src/services/mascota_service.dart';
+import 'package:jamikapet/src/services/pets_service.dart';
+
 
 class PetProfilePage extends StatefulWidget {
   const PetProfilePage({super.key});
@@ -28,8 +29,6 @@ class _PetProfilePageState extends State<PetProfilePage> {
     _cargarMascotas();
   }
 
-  //TODO: reemplaza por donde guardes tu token (secure storage, provider, etc.)
-  Future<String?> _obtenerToken() async => null;
 
   Future<void> _cargarMascotas() async {
     setState(() {
@@ -38,17 +37,28 @@ class _PetProfilePageState extends State<PetProfilePage> {
     });
 
     try {
-      final service = MascotaService(token: await _obtenerToken());
-      final lista = await service.obtenerMascotas();
+      final lista = await PetsService.obtenerMascotas();
+
       if (!mounted) return;
-      setState(() => _mascotas = lista);
+
+      setState(() {
+        _mascotas = lista;
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+
+      setState(() {
+        _error = e.toString();
+      });
     } finally {
-      if (mounted) setState(() => _cargando = false);
+      if (mounted) {
+        setState(() {
+          _cargando = false;
+        });
+      }
     }
   }
+
 
   Future<void> _irARegistro() async {
     final creada = await Navigator.pushNamed(context, AppRoutes.registroPet);
@@ -140,7 +150,7 @@ class _PetProfilePageState extends State<PetProfilePage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
         itemCount: _mascotas.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        separatorBuilder: (_, _) => const SizedBox(height: 14),
         itemBuilder: (_, i) => _TarjetaMascota(mascota: _mascotas[i]),
       ),
     );
@@ -205,7 +215,7 @@ class _TarjetaMascota extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foto = MascotaService.urlFoto(mascota.fotoUrl);
+    final foto = PetsService.urlFoto(mascota.image);
     final emoji = mascota.tipo.toLowerCase() == 'gato' ? '🐱' : '🐶';
 
     return Container(
@@ -227,7 +237,7 @@ class _TarjetaMascota extends StatelessWidget {
             radius: 36,
             backgroundColor: const Color(0xFFE0F3F1),
             backgroundImage: foto != null ? NetworkImage(foto) : null,
-            onBackgroundImageError: foto != null ? (_, __) {} : null,
+            onBackgroundImageError: foto != null ? (_, _) {} : null,
             child: foto == null
                 ? Text(emoji, style: const TextStyle(fontSize: 32))
                 : null,

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:jamikapet/src/models/usuario.dart';
 import 'package:jamikapet/src/services/auth_service.dart';
 
@@ -289,7 +288,6 @@ class RegisterBlocCubit {
       password: _password,
     );
   }
-
   // ============================================================
   // OBTENER DATOS DEL FORMULARIO
   // ============================================================
