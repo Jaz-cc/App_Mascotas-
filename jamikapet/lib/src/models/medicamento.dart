@@ -9,6 +9,7 @@ class Medicamento {
   final DateTime fechaFinalizacion;
   final String indicaciones;
   final String veterinario;
+  final bool esActivo;
 
   Medicamento({
     this.id,
@@ -21,26 +22,32 @@ class Medicamento {
     required this.fechaFinalizacion,
     required this.indicaciones,
     required this.veterinario,
+    this.esActivo = true,
   });
 
-  factory Medicamento.fromJson(Map json) {
+  factory Medicamento.fromJson(Map<String, dynamic> json) {
     return Medicamento(
-      id: json['id'],
+      id: json['id'] ?? json['_id'],
       mascotaId: json['mascotaId'] ?? '',
       nombre: json['nombre'] ?? '',
       dosis: json['dosis'] ?? '',
       frecuencia: json['frecuencia'] ?? '',
-      horaAdministracion: json['horaAdministracion'] ?? '',
-      fechaInicio: DateTime.parse(json['fechaInicio']),
-      fechaFinalizacion: DateTime.parse(json['fechaFinalizacion']),
+      horaAdministracion: json['horaAdministracion'] ?? json['horarios'] ?? '',
+      fechaInicio: json['fechaInicio'] != null 
+          ? DateTime.parse(json['fechaInicio']) 
+          : DateTime.now(),
+      fechaFinalizacion: json['fechaFinalizacion'] != null 
+          ? DateTime.parse(json['fechaFinalizacion']) 
+          : DateTime.now(),
       indicaciones: json['indicaciones'] ?? '',
       veterinario: json['veterinario'] ?? '',
+      esActivo: json['esActivo'] ?? true,
     );
   }
 
-  Map toJson() {
+  Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'mascotaId': mascotaId,
       'nombre': nombre,
       'dosis': dosis,
@@ -50,6 +57,7 @@ class Medicamento {
       'fechaFinalizacion': fechaFinalizacion.toIso8601String(),
       'indicaciones': indicaciones,
       'veterinario': veterinario,
+      'esActivo': esActivo,
     };
   }
 }
