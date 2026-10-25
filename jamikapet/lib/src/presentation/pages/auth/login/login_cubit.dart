@@ -41,11 +41,11 @@ class LoginCubit extends Cubit<LoginState> {
       : _authService = authService ?? AuthService(),
         super(LoginInitial());
 
+  
   Future<void> login(
     String email,
     String password,
   ) async {
-    // Validar campos
     if (email.trim().isEmpty || password.isEmpty) {
       emit(
         LoginFailure(
@@ -58,12 +58,12 @@ class LoginCubit extends Cubit<LoginState> {
     emit(LoginLoading());
 
     try {
-      // Petición real al backend NestJS
       final response = await _authService.iniciarSesion(
-        email: email.trim(),
+        email: email,
         password: password,
       );
 
+      // Obtener usuario y token de la respuesta de NestJS.
       final dynamic userData =
           response['user'] ?? response['usuario'];
 
@@ -79,11 +79,17 @@ class LoginCubit extends Cubit<LoginState> {
         );
       }
 
-      await TokenStorage.saveToken(tokenData);
+      final user = Map<String, dynamic>.from(userData);
+      final token = tokenData;
+
+      // Guardar token y datos del usuario.
+      await TokenStorage.saveToken(token);
+      await TokenStorage.saveUser(user);
+
       emit(
         LoginSuccess(
-          user: Map<String, dynamic>.from(userData),
-          token: tokenData,
+          user: user,
+          token: token,
           message: response['message']?.toString() ??
               'Inicio de sesión exitoso.',
         ),
@@ -99,5 +105,7 @@ class LoginCubit extends Cubit<LoginState> {
       );
     }
   }
+
+
 }
 

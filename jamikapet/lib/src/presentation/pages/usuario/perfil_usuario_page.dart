@@ -3,15 +3,59 @@ import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';  
 import 'package:jamikapet/src/core/storage/token_storage.dart';
+import 'package:jamikapet/src/models/usuario.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
-  const PerfilUsuarioPage({super.key});
+  const PerfilUsuarioPage({
+    super.key,
+    this.userId,
+  });
+
+  final int? userId;
 
   @override
-  State<PerfilUsuarioPage> createState() => _PerfilUsuarioPageState();
+  State<PerfilUsuarioPage> createState() =>
+      _PerfilUsuarioPageState();
 }
 
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
+
+  Usuario? usuario;
+  bool cargando = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarUsuario();
+  }
+
+  Future<void> _cargarUsuario() async {
+    try {
+      final datos = await TokenStorage.getUser();
+
+      if (datos == null) {
+        throw Exception(
+          'No se encontraron los datos del usuario. '
+          'Cierra sesión e inicia sesión nuevamente.',
+        );
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        usuario = Usuario.fromJson(datos);
+        cargando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        error = e.toString();
+        cargando = false;
+      });
+    }
+  }
 
   Future<void> cerrarSesion() async {
     await TokenStorage.clearToken();
@@ -28,7 +72,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   @override
   Widget build(BuildContext context) {
     const primaryBackground = Color(0xFFE2F4F1);
-    const darkText = Colors.black87;
+    // const darkText = Colors.black87;
 
     return Scaffold(
       backgroundColor: primaryBackground,
@@ -39,217 +83,100 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         icon: Icons.person,
       ),
       body: Column(
-        children: [
-          // Contenido de la pantalla
-          Expanded(
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 10),
-
-                    Center(
-                      child: Container(
-                        width: 110,
-                        height: 110,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF007A8C),
-                          shape: BoxShape.circle,
+      children: [
+        Expanded(
+          child: SafeArea(
+            child: cargando
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(error!),
                         ),
-                        child: const Icon(
-                          Icons.person,
-                          size: 70,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 35),
-
-                    _buildInfoTile(label: 'Nombre:', value: 'Usuario12'),
-
-                    const SizedBox(height: 16),
-
-                    _buildInfoTile(label: 'Correo:', value: 'usuario12@gmail.com'),
-
-                    const SizedBox(height: 30),
-
-                    const Text(
-                      'Mascota:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: darkText,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-                    
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final bool isSmallScreen = constraints.maxWidth < 240;
-
-                        final perroCard = InkWell(
-                          onTap: () {
-                            Navigator.pushNamed(context, AppRoutes.petProfile,);
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            width: 100,
+                      )
+                    : usuario == null
+                        ? const Center(
+                            child: Text('No se encontró el usuario.'),
+                          )
+                        : SingleChildScrollView(
                             padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFFB2DFDB),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                              horizontal: 24,
+                              vertical: 16,
                             ),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF3E0),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.pets,
-                                    size: 36,
-                                    color: Colors.orangeAccent,
+                                const SizedBox(height: 10),
+
+                                Center(
+                                  child: CircleAvatar(
+                                    radius: 55,
+                                    backgroundColor: const Color(0xFF007A8C),
+                                    backgroundImage: usuario?.image != null
+                                        ? NetworkImage(usuario!.image!)
+                                        : null,
+                                    child: usuario?.image == null
+                                        ? const Icon(
+                                            Icons.person,
+                                            size: 70,
+                                            color: Colors.white,
+                                          )
+                                        : null,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Perro',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: darkText,
+
+                                const SizedBox(height: 35),
+
+                                _buildInfoTile(
+                                  label: 'Nombre:',
+                                  value:
+                                      '${usuario!.nombre} ${usuario!.apellido}',
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                _buildInfoTile(
+                                  label: 'Correo:',
+                                  value: usuario!.email,
+                                ),
+
+                                const SizedBox(height: 30),
+
+                                Center(
+                                  child: SizedBox(
+                                    width: 250,
+                                    height: 52,
+                                    child: ElevatedButton.icon(
+                                      onPressed: cerrarSesion,
+                                      icon: const Icon(
+                                        Icons.logout,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        'Cerrar sesión',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFF4FC3B8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        );
-
-                        final agregarCard = InkWell(
-                          onTap: () {
-                            Navigator.pushNamed(context, AppRoutes.registroPet,);
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            width: 100,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFFB2DFDB),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(255, 224, 242, 255),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.add,
-                                    size: 36,
-                                    color: Colors.blueAccent,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Agregar',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: darkText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-
-                        return Flex(
-                          direction: isSmallScreen
-                              ? Axis.vertical
-                              : Axis.horizontal,
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            perroCard,
-                            SizedBox(
-                              width: isSmallScreen ? 0 : 12,
-                              height: isSmallScreen ? 12 : 0,
-                            ),
-                            agregarCard,
-                          ],
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
-                    
-                    // ===============================================================
-                    // BOTON CIERRE DE SESIÓN
-                    // ===============================================================
-                    SizedBox(
-                      width: 250,
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: cerrarSesion,
-                        icon: const Icon(
-                          Icons.logout,
-                          color: Colors.white,
-                        ),
-                        label: const Text(
-                          'Cerrar sesión',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4FC3B8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                      ),
-                    ),           
-                  ],
-                ),
-              ),
             ),
           ),
 
@@ -269,7 +196,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   break;
 
                 case 2:
-                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  Navigator.pushNamed(context, AppRoutes.pets,);
                   break;
 
                 case 3:
