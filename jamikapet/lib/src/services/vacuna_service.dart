@@ -20,8 +20,7 @@ class VacunaService {
   Future<List<Vacuna>> obtenerVacunas(int mascotaId) async {
     try {
       
-      final uri = Uri.parse('${ApiConfig.baseUrl}/vacunas')
-          .replace(queryParameters: {'mascotaId': mascotaId.toString()});
+      final uri = Uri.parse('${ApiConfig.baseUrl}/vacunas/mascota/$mascotaId');
 
       final response = await http.get(uri, headers: _headers).timeout(_timeout);
 
@@ -47,6 +46,58 @@ class VacunaService {
       throw const PetsServiceException('El servidor tardó demasiado en responder.');
     }
   }
+
+  
+  Future<void> actualizarVacuna({
+    required int registroId,
+    required DateTime fecha,
+    required String estado,
+    required String observaciones,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/vacunas/registro/$registroId',);
+
+      final response = await http
+          .put(
+            uri,
+            headers: {
+              ..._headers,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'estado': estado,
+              'fecha': fecha.toIso8601String().split('T').first,
+              'observaciones': observaciones,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 401) {
+        throw const PetsServiceException(
+          'Tu sesión expiró. Inicia sesión nuevamente.',
+        );
+      }
+
+      if (response.statusCode != 200 &&
+          response.statusCode != 204) {
+        throw PetsServiceException(
+          _mensajeError(
+            response,
+            'No se pudo actualizar la vacuna.',
+          ),
+        );
+      }
+    } on SocketException {
+      throw const PetsServiceException(
+        'Sin conexión con el servidor.',
+      );
+    } on TimeoutException {
+      throw const PetsServiceException(
+        'El servidor tardó demasiado en responder.',
+      );
+    }
+  }
+
 
   String _mensajeError(http.Response r, String porDefecto) {
     try {

@@ -96,17 +96,18 @@ class _PetProfilePageState extends State<PetProfilePage> {
       throw Exception('Todavía no tienes mascotas registradas.');
     }
 
-    if (widget.mascotaId != null) {
-      return mascotas.firstWhere(
-        (mascota) => mascota.id == widget.mascotaId,
-        orElse: () => throw Exception(
-          'No se encontró la mascota seleccionada.',
-        ),
-      );
+    final idSeleccionado = widget.mascotaId;
+
+    if (idSeleccionado == null) {
+      throw Exception('No se recibió el ID de la mascota seleccionada.');
     }
-    
-    // Si no recibimos ID, mostramos la primera mascota.
-    return mascotas.first;
+
+    return mascotas.firstWhere(
+      (mascota) => mascota.id == idSeleccionado,
+      orElse: () => throw Exception(
+        'No se encontró la mascota con ID $idSeleccionado.',
+      ),
+    );
   }
 
   @override
@@ -217,7 +218,6 @@ class _PetProfilePageState extends State<PetProfilePage> {
       );
     }    // Mueve aquí los métodos visuales de tu clase actual.
   
-
 
   // ===============================================================
   // ENCABEZADO DE LA MASCOTA
@@ -401,122 +401,15 @@ class _PetProfilePageState extends State<PetProfilePage> {
                   titulo: 'Sexo',
                   valor: mascota.sexo.isEmpty ? 'No especificado' : mascota.sexo,
                 ),
+
                 _separador(),
-                _datoMascota(
-                  icono: Icons.vaccines_outlined,
-                  titulo: "Última vacuna",
-                  valor: 'Rabia',
-                  accion: TextButton(
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      foregroundColor: _Paleta.primarioOscuro,
-                    ),
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, AppRoutes.vacunas);
-                    },
-                    child: const Text(
-                      "Ver todas",
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
 
-          const SizedBox(height: 18),
-
-          // ---------------- PRÓXIMA CITA ----------------
-          _etiquetaSeccion("Próxima cita"),
-          const SizedBox(height: 8),
-          _tarjetaEvento(
-            icono: Icons.event_outlined,
-            titulo: 'Chequeo General',
-            fecha: '30-10-2026',
-            onTap: () {},
-          ),
-
           const SizedBox(height: 16),
 
-          // ---------------- PRÓXIMA VACUNA ----------------
-          _etiquetaSeccion("Próxima vacuna"),
-          const SizedBox(height: 8),
-          _tarjetaEvento(
-            icono: Icons.vaccines_outlined,
-            titulo: 'Parbo',
-            fecha: '20-11-2026',
-            onTap: () {},
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _etiquetaSeccion(String texto) {
-    return Text(
-      texto,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-        color: _Paleta.tinta,
-      ),
-    );
-  }
-
-  Widget _tarjetaEvento({
-    required IconData icono,
-    required String titulo,
-    required String fecha,
-    required VoidCallback onTap,
-  }) {
-    return Semantics(
-      button: true,
-      label: "$titulo, $fecha",
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: _Paleta.campo,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _Paleta.borde),
-          ),
-          child: Row(
-            children: [
-              Icon(icono, size: 20, color: _Paleta.primarioOscuro),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: _Paleta.tinta,
-                  ),
-                ),
-              ),
-              Text(
-                fecha,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  color: _Paleta.tintaSuave,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: _Paleta.tintaSuave,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -604,9 +497,6 @@ class _Paleta {
   static const fondo = Color(0xFFE1F5F2);
   static const primarioOscuro = Color(0xFF1F7A70);
   static const verdeMuyClaro = Color(0xFFD1F0EE);
-  static const campo = Color(0xFFF4FBFA);
-  static const borde = Color(0xFFCBE5E2);
   static const tinta = Color(0xFF16302D);
   static const tintaSuave = Color(0xFF5C7A77);
-  static const aplicada = Color(0xFF2E9E5B);
 }

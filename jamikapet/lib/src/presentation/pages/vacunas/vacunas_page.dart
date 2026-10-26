@@ -5,7 +5,9 @@ import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/services/pets_service.dart';
-import 'package:jamikapet/src/services/vacuna.dart';
+import 'package:jamikapet/src/core/storage/token_storage.dart';
+import 'package:jamikapet/src/services/vacuna_service.dart';
+import 'package:jamikapet/src/presentation/widgets/modal.dart';
 
 class VacunasScreen extends StatefulWidget {
   const VacunasScreen({super.key});
@@ -29,7 +31,9 @@ class _VacunasScreenState extends State<VacunasScreen> {
     _cargarInicial();
   }
 
-  Future<String?> _obtenerToken() async => null;
+  Future<String?> _obtenerToken() async {
+    return await TokenStorage.getToken();
+  }
 
   
   Future<void> _cargarInicial() async {
@@ -111,6 +115,50 @@ class _VacunasScreenState extends State<VacunasScreen> {
     _cargarVacunas();
   }
 
+  
+  Future<void> _editarVacuna(Vacuna vacuna) async {
+    final resultado = await VacunaUpdateModal.show(
+      context,
+      fechaInicial: vacuna.fecha,
+      estadoInicial: vacuna.estado.etiqueta,
+      observacionesIniciales: vacuna.observaciones ?? '',
+      onGuardar: (fecha, estado, observaciones) async {
+        final token = await _obtenerToken();
+
+        if (token == null || token.isEmpty) {
+          throw Exception(
+            'No hay una sesión activa. Inicia sesión nuevamente.',
+          );
+        }
+
+        final service = VacunaService(token: token);
+
+        await service.actualizarVacuna(
+          registroId: vacuna.id,
+          fecha: fecha,
+          estado: estado,
+          observaciones: observaciones,
+        );
+      },
+    );
+    
+    if (!mounted) return;
+
+    if (resultado == true) {
+      await _cargarVacunas();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vacuna actualizada correctamente.'),
+          backgroundColor: Color(0xFF2E9E5B),
+        ),
+      );
+    }
+  }
+
+
   // ---------------- BUILD ----------------
 
   @override
@@ -157,7 +205,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
                   Navigator.pushNamed(context, AppRoutes.menu);
                   break;
                 case 2:
-                  Navigator.pushNamed(context, AppRoutes.petProfile);
+                  Navigator.pushNamed(context, AppRoutes.pets);
                   break;
                 case 3:
                   Navigator.pushNamed(context, AppRoutes.perfil);
@@ -220,7 +268,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
         _mensajeCard(
           icono: Icons.vaccines_outlined,
           titulo: 'Sin vacunas registradas',
-          detalle: 'Aún no hay vacunas para ${_seleccionada!.nombre}.',
+          detalle: 'Aún no hay vacunas para ${_seleccionada!.nombrePet}.',
         )
       else
         ..._vacunas.map(_tarjetaVacuna),
@@ -362,7 +410,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
 
   // ---------------- SELECTOR DE MASCOTAS ----------------
   IconData _iconoMascota(Mascota m) =>
-      m.tipo.toLowerCase() == 'gato' ? Icons.pets : Icons.pets;
+      m.especie.toLowerCase() == 'gato' ? Icons.pets : Icons.pets;
 
   Widget _selectorMascotas() {
     return SizedBox(
@@ -378,7 +426,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
           return Semantics(
             button: true,
             selected: seleccionada,
-            label: "Ver vacunas de ${m.nombre}",
+            label: "Ver vacunas de ${m.nombrePet}",
             child: InkWell(
               borderRadius: BorderRadius.circular(24),
               onTap: () => _seleccionarMascota(m),
@@ -400,7 +448,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
                         size: 18, color: _Paleta.primarioOscuro),
                     const SizedBox(width: 8),
                     Text(
-                      m.nombre,
+                      m.nombrePet,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight:
@@ -465,117 +513,124 @@ class _VacunasScreenState extends State<VacunasScreen> {
     final estilo = _estiloEstado(vacuna.estado);
     final mascota = _seleccionada!;
 
-    return Container(
+    return InkWell(
+      onTap: () => _editarVacuna(vacuna),
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F0F3D3A),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: _Paleta.verdeMuyClaro,
-              shape: BoxShape.circle,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F0F3D3A),
+              blurRadius: 12,
+              offset: Offset(0, 4),
             ),
-            child: const Icon(Icons.vaccines,
-                color: _Paleta.primarioOscuro, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        vacuna.nombre,
-                        style: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w700,
-                          color: _Paleta.tinta,
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: _Paleta.verdeMuyClaro,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.vaccines,
+                  color: _Paleta.primarioOscuro, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          vacuna.nombre,
+                          style: const TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: _Paleta.tinta,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: 8),
+                      Text(
+                        vacuna.fechaFormateada,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _Paleta.tintaSuave,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (vacuna.descripcion.isNotEmpty) ...[
+                    const SizedBox(height: 3),
                     Text(
-                      vacuna.fechaFormateada,
+                      vacuna.descripcion,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
+                        height: 1.3,
                         color: _Paleta.tintaSuave,
                       ),
                     ),
                   ],
-                ),
-                if (vacuna.descripcion.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    vacuna.descripcion,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      height: 1.3,
-                      color: _Paleta.tintaSuave,
-                    ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: estilo.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(estilo.icono, size: 13, color: estilo.color),
+                            const SizedBox(width: 4),
+                            Text(
+                              vacuna.estado.etiqueta,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: estilo.color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const Spacer(),
+                      
+                      Icon(_iconoMascota(mascota),
+                          size: 14, color: _Paleta.tintaSuave),
+
+                      const SizedBox(width: 4),
+
+                      Text(
+                        mascota.nombrePet,
+                        style: const TextStyle(
+                            fontSize: 12, color: _Paleta.tintaSuave),
+                      ),
+                    ],
                   ),
                 ],
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: estilo.color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(estilo.icono, size: 13, color: estilo.color),
-                          const SizedBox(width: 4),
-                          Text(
-                            vacuna.estado.etiqueta,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: estilo.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(_iconoMascota(mascota),
-                        size: 14, color: _Paleta.tintaSuave),
-                    const SizedBox(width: 4),
-                    Text(
-                      mascota.nombre,
-                      style: const TextStyle(
-                          fontSize: 12, color: _Paleta.tintaSuave),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          const Icon(Icons.chevron_right_rounded,
-              color: _Paleta.primario, size: 22),
-        ],
-      ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right_rounded,
+                color: _Paleta.primario, size: 22),
+          ],
+        ),
+      )
     );
   }
 

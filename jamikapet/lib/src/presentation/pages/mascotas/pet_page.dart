@@ -29,7 +29,6 @@ class _PetPageState extends State<PetPage> {
     _cargarMascotas();
   }
 
-
   Future<void> _cargarMascotas() async {
     setState(() {
       _cargando = true;
@@ -58,7 +57,6 @@ class _PetPageState extends State<PetPage> {
       }
     }
   }
-
 
   Future<void> _irARegistro() async {
     final creada = await Navigator.pushNamed(context, AppRoutes.registroPet);
@@ -282,27 +280,6 @@ class _TarjetaMascota extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  // Text(
-                  //   '${mascota.especie} · ${mascota.raza}',
-                  //   style: const TextStyle(
-                  //     fontSize: 14,
-                  //     color: PetPage.tintaSuave,
-                  //   ),
-                  // ),
-
-                  // const SizedBox(height: 8),
-
-                  // Wrap(
-                  //   spacing: 8,
-                  //   runSpacing: 6,
-                  //   children: [
-                  //     _chip(mascota.sexo),
-                  //     _chip(
-                  //       '${mascota.edad} ${mascota.edad == 1 ? "año" : "años"}',
-                  //     ),
-                  //     _chip('${mascota.peso} kg'),
-                  //   ],
-                  // ),
                 ],
               ),
             ),
@@ -312,22 +289,4 @@ class _TarjetaMascota extends StatelessWidget {
     );
   }
 
-  Widget _chip(String texto) => Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 4,
-        ),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0F3F1),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          texto,
-          style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: PetPage.primario,
-          ),
-        ),
-      );
 }

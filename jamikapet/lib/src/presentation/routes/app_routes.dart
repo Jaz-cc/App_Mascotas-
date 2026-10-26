@@ -4,8 +4,9 @@ import 'package:jamikapet/src/presentation/pages/auth/register/register_page.dar
 import 'package:jamikapet/src/presentation/pages/mascotas/registro_mascota.dart';
 import 'package:jamikapet/src/presentation/pages/mascotas/pet_page.dart';
 import '../pages/home/home_page.dart';
-import 'package:jamikapet/src/presentation/pages/vacunas/vacunas.dart';
+import 'package:jamikapet/src/presentation/pages/vacunas/vacunas_page.dart';
 import 'package:jamikapet/src/presentation/pages/usuario/perfil_usuario_page.dart';
+import 'package:jamikapet/src/presentation/pages/mascotas/pet_profile_page.dart';
 import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
 import 'package:jamikapet/src/presentation/pages/medicamento/medicamento_page.dart';
 import 'package:jamikapet/src/presentation/pages/notificaciones/notificaciones_page.dart';
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String registroPet = '/perfil/registro_pet';
   static const String home = '/home';
+  static const String pets = '/mascotas';
   static const String petProfile = '/mascotas/perfil';
   static const String perfil = '/perfil';
   static const String menu = '/menu';  
@@ -35,7 +37,14 @@ class AppRoutes {
     register: (context) => const RegisterPage(),
     registroPet: (context) => const RegistroMascotaScreen(),
     home: (context) => const HomePage(),
-    petProfile: (context) => const PetProfilePage(),        
+    pets: (context) => const PetPage(),
+    petProfile: (context) {
+      final mascotaId = ModalRoute.of(context)!.settings.arguments as int;
+
+      return PetProfilePage(
+        mascotaId: mascotaId,
+      );
+    },       
     perfil: (context) => const PerfilUsuarioPage(),
     menu: (context) => const MenuPage(),
     vacunas: (context) => const VacunasScreen(),

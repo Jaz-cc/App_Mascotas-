@@ -87,7 +87,7 @@ class HomePage extends StatelessWidget {
                   break;
 
                 case 2:
-                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  Navigator.pushNamed(context, AppRoutes.pets,);
                   break;
                 
                 case 3:
