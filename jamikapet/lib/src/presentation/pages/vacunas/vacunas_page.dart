@@ -7,7 +7,7 @@ import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/services/pets_service.dart';
 import 'package:jamikapet/src/core/storage/token_storage.dart';
 import 'package:jamikapet/src/services/vacuna_service.dart';
-import 'package:jamikapet/src/presentation/widgets/modal.dart';
+import 'package:jamikapet/src/presentation/widgets/vacuna_modal.dart';
 
 class VacunasScreen extends StatefulWidget {
   const VacunasScreen({super.key});
