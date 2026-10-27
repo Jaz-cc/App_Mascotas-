@@ -9,6 +9,7 @@ class Medicamento {
   final DateTime fechaFinalizacion;
   final String indicaciones;
   final String veterinario;
+  final bool esActivo;
 
   Medicamento({
     this.id,
@@ -21,6 +22,7 @@ class Medicamento {
     required this.fechaFinalizacion,
     required this.indicaciones,
     required this.veterinario,
+    this.esActivo = true,
   });
 
   factory Medicamento.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,7 @@ class Medicamento {
           DateTime.parse(json['fechaFinalizacion'].toString()),
       indicaciones: json['indicaciones']?.toString() ?? '',
       veterinario: json['veterinario']?.toString() ?? '',
+      esActivo: json['esActivo'] ?? true,
     );
   }
 
@@ -55,6 +58,7 @@ class Medicamento {
           fechaFinalizacion.toIso8601String().split('T').first,
       'indicaciones': indicaciones,
       'veterinario': veterinario,
+      'esActivo': esActivo,
     };
   }
 }
