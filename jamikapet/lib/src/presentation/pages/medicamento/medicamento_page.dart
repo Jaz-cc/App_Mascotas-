@@ -618,7 +618,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                   break;
 
                 case 2:
-                  Navigator.pushNamed(context, AppRoutes.petProfile,);
+                  Navigator.pushNamed(context, AppRoutes.pets,);
                   break;
                 
                 case 3:

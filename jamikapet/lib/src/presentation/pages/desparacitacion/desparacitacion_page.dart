@@ -220,7 +220,7 @@ class _DewormingPageState extends State<DewormingPage> {
                   break;
 
                 case 2:
-                  Navigator.pushNamed(context, AppRoutes.petProfile);
+                  Navigator.pushNamed(context, AppRoutes.pets);
                   break;
 
                 case 3:
@@ -322,7 +322,7 @@ class _DewormingPageState extends State<DewormingPage> {
             return Semantics(
               button: true,
               selected: seleccionada,
-              label: 'Ver tratamientos de ${mascota.nombre}',
+              label: 'Ver tratamientos de ${mascota.nombrePet}',
               child: InkWell(
                 borderRadius: BorderRadius.circular(22),
                 onTap: () => _seleccionarMascota(mascota),
@@ -347,7 +347,7 @@ class _DewormingPageState extends State<DewormingPage> {
                       Icon(Icons.pets, size: 15, color: _Paleta.primarioOscuro),
                       const SizedBox(width: 6),
                       Text(
-                        mascota.nombre,
+                        mascota.nombrePet,
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: seleccionada
@@ -569,7 +569,7 @@ class _DewormingPageState extends State<DewormingPage> {
           const SizedBox(height: 4),
           Text(
             'Registra la primera desparasitación de '
-            '${_mascotaSeleccionada?.nombre ?? 'tu mascota'}',
+            '${_mascotaSeleccionada?.nombrePet ?? 'tu mascota'}',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
           ),
@@ -794,7 +794,7 @@ class _DewormingPageState extends State<DewormingPage> {
                         children: _mascotas.map((mascota) {
                           final activa = mascota.id == mascotaDelFormulario?.id;
                           return ChoiceChip(
-                            label: Text(mascota.nombre),
+                            label: Text(mascota.nombrePet),
                             selected: activa,
                             onSelected: (_) => actualizarDialogo(
                               () => mascotaDelFormulario = mascota,
