@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/models/consulta.dart';
+import 'package:jamikapet/src/services/consulta_service.dart';
 import 'package:jamikapet/src/presentation/pages/usuario/perfilUsuario_page.dart';
 import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
+import 'package:jamikapet/src/presentation/pages/IAchat/ia_chat_page.dart';
 
 class CitasVeterinariasPage extends StatefulWidget {
   const CitasVeterinariasPage({super.key});
@@ -10,8 +13,50 @@ class CitasVeterinariasPage extends StatefulWidget {
 }
 
 class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
-  final int _selectedIndex = 1; // Mascotas / Salud activo
+  final int _selectedIndex = 1;
   bool _notificacionActiva = true;
+  bool _cargando = true;
+  List<Consulta> _listaConsultas = [];
+
+  final TextEditingController _vetController = TextEditingController();
+  final TextEditingController _clinicaController = TextEditingController();
+  final TextEditingController _motivoController = TextEditingController();
+  final TextEditingController _fechaHoraController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarConsultas();
+  }
+
+  @override
+  void dispose() {
+    _vetController.dispose();
+    _clinicaController.dispose();
+    _motivoController.dispose();
+    _fechaHoraController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _cargarConsultas() async {
+    setState(() => _cargando = true);
+    try {
+      final consultas = await ConsultaService.obtenerConsultas();
+      setState(() {
+        _listaConsultas = consultas;
+        _cargando = false;
+      });
+    } catch (e) {
+      setState(() => _cargando = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar citas: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   void _onItemTapped(int index) {
     if (index == 1) {
@@ -31,8 +76,12 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
     }
   }
 
-  // Diálogo para registrar una nueva cita o veterinario
   void _mostrarDialogoNuevaCita() {
+    _vetController.clear();
+    _clinicaController.clear();
+    _motivoController.clear();
+    _fechaHoraController.clear();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -58,6 +107,7 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
               ),
               const SizedBox(height: 15),
               TextField(
+                controller: _vetController,
                 decoration: InputDecoration(
                   labelText: 'Nombre del Veterinario',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -66,6 +116,7 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
               ),
               const SizedBox(height: 12),
               TextField(
+                controller: _clinicaController,
                 decoration: InputDecoration(
                   labelText: 'Clínica Veterinaria',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -74,6 +125,7 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
               ),
               const SizedBox(height: 12),
               TextField(
+                controller: _motivoController,
                 decoration: InputDecoration(
                   labelText: 'Motivo de Consulta',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -81,18 +133,13 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Fecha y Hora',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        prefixIcon: const Icon(Icons.calendar_today_outlined),
-                      ),
-                    ),
-                  ),
-                ],
+              TextField(
+                controller: _fechaHoraController,
+                decoration: InputDecoration(
+                  labelText: 'Hora (Ej. 10:30 AM)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.access_time_outlined),
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -105,14 +152,43 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('¡Cita registrada correctamente!'),
-                        backgroundColor: Color(0xFF00695C),
-                      ),
+                  onPressed: () async {
+                    if (_vetController.text.trim().isEmpty) return;
+
+                    final nuevaConsulta = Consulta(
+                      mascotaId: '1',
+                      veterinario: _vetController.text.trim(),
+                      motivo: _motivoController.text.trim(),
+                      fecha: DateTime.now(),
+                      hora: _fechaHoraController.text.trim().isEmpty
+                          ? '10:00 AM'
+                          : _fechaHoraController.text.trim(),
+                      notas: _clinicaController.text.trim().isNotEmpty
+                          ? 'Clínica: ${_clinicaController.text.trim()}'
+                          : null,
                     );
+
+                    Navigator.pop(context);
+
+                    try {
+                      await ConsultaService.registrarConsulta(nuevaConsulta);
+                      _cargarConsultas();
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('¡Cita registrada correctamente!'),
+                          backgroundColor: Color(0xFF00695C),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al guardar cita: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   },
                   child: const Text(
                     'Guardar Cita',
@@ -132,6 +208,8 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
     const primaryBackground = Color(0xFFE2F4F1);
     const headerColor = Color(0xFFC5ECE5);
     const darkText = Colors.black87;
+
+    final proximaCita = _listaConsultas.isNotEmpty ? _listaConsultas.first : null;
 
     return Scaffold(
       backgroundColor: primaryBackground,
@@ -157,153 +235,163 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Seccion: Próxima Cita & Notificaciones
-              const Text(
-                'Próxima Cita',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: darkText,
-                ),
-              ),
-              const SizedBox(height: 10),
+        child: _cargando
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00695C)))
+            : RefreshIndicator(
+                onRefresh: _cargarConsultas,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(18.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Próxima Cita',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: darkText,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFB2DFDB)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0F2F1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(Icons.event, color: Color(0xFF00695C)),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFB2DFDB)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
-                            const SizedBox(width: 10),
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  '15 de Octubre, 2026',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE0F2F1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.event, color: Color(0xFF00695C)),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          proximaCita != null
+                                              ? '${proximaCita.fecha.day}/${proximaCita.fecha.month}/${proximaCita.fecha.year}'
+                                              : 'Sin cita agendada',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                        Text(
+                                          proximaCita?.hora ?? '--:--',
+                                          style: const TextStyle(color: Colors.black54, fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  '10:30 AM',
-                                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.notifications_active_outlined,
+                                        size: 20, color: Colors.teal),
+                                    Switch(
+                                      value: _notificacionActiva,
+                                      activeColor: const Color(0xFF00695C),
+                                      onChanged: (val) {
+                                        setState(() => _notificacionActiva = val);
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
+                            const Divider(height: 24),
+                            _buildDetailRow('Veterinario:', proximaCita?.veterinario ?? 'N/A'),
+                            _buildDetailRow('Motivo:', proximaCita?.motivo ?? 'Sin motivo registrado'),
+                            if (proximaCita?.notas != null)
+                              _buildDetailRow('Notas:', proximaCita!.notas!),
                           ],
                         ),
-                        // Control de Notificaciones
-                        Row(
-                          children: [
-                            const Icon(Icons.notifications_active_outlined,
-                                size: 20, color: Colors.teal),
-                            Switch(
-                              value: _notificacionActiva,
-                              activeColor: const Color(0xFF00695C),
-                              onChanged: (val) {
-                                setState(() => _notificacionActiva = val);
-                              },
+                      ),
+                      const SizedBox(height: 20),
+
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _mostrarDialogoNuevaCita,
+                          icon: const Icon(Icons.add_circle_outline, color: darkText),
+                          label: const Text(
+                            'Registrar Nueva Cita / Veterinario',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: darkText,
                             ),
-                          ],
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFA8E6CF),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              side: const BorderSide(color: Color(0xFF81C784)),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    _buildDetailRow('Veterinario:', 'Dr. Carlos Mendoza'),
-                    _buildDetailRow('Clínica:', 'Veterinaria Mascotas Sanas'),
-                    _buildDetailRow('Motivo:', 'Chequeo General y Control de Peso'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+                      ),
+                      const SizedBox(height: 25),
 
-              // Botón Registrar Nueva Cita / Veterinario
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _mostrarDialogoNuevaCita,
-                  icon: const Icon(Icons.add_circle_outline, color: darkText),
-                  label: const Text(
-                    'Registrar Nueva Cita / Veterinario',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: darkText,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFA8E6CF),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      side: const BorderSide(color: Color(0xFF81C784)),
-                    ),
+                      const Text(
+                        'Historial de Citas',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: darkText,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (_listaConsultas.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Text('No hay historial de citas.'),
+                          ),
+                        )
+                      else
+                        ..._listaConsultas.map((item) => _buildHistorialCard(
+                              fecha: '${item.fecha.day}/${item.fecha.month}/${item.fecha.year} - ${item.hora}',
+                              veterinario: item.veterinario,
+                              motivo: item.motivo,
+                              notas: item.notas ?? 'Sin observaciones.',
+                            )),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 25),
-
-              // Sección: Historial de Citas y Notas Posteriores
-              const Text(
-                'Historial de Citas',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: darkText,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              _buildHistorialCard(
-                fecha: '20 Sep 2026 - 04:00 PM',
-                veterinario: 'Dra. María Fernández',
-                clinica: 'Hospital Veterinario Central',
-                motivo: 'Vacunación Anual',
-                notas: 'Mascota en excelente estado. Aplicada vacuna sextuple. Se sugiere control en 1 mes.',
-              ),
-              const SizedBox(height: 12),
-
-              _buildHistorialCard(
-                fecha: '05 Jun 2026 - 11:00 AM',
-                veterinario: 'Dr. Carlos Mendoza',
-                clinica: 'Veterinaria Mascotas Sanas',
-                motivo: 'Limpieza Dental',
-                notas: 'Procedimiento exitoso. Se formuló enjuague bucal antiséptico por 5 días.',
-              ),
-            ],
-          ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF1F7A70),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ChatIaPage()),
         ),
+        child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
       ),
       bottomNavigationBar: _buildStandardBottomNavigationBar(),
     );
@@ -330,11 +418,11 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
   Widget _buildHistorialCard({
     required String fecha,
     required String veterinario,
-    required String clinica,
     required String motivo,
     required String notas,
   }) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
@@ -360,11 +448,8 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
           ),
           const Divider(height: 16),
           _buildDetailRow('Veterinario:', veterinario),
-          _buildDetailRow('Clínica:', clinica),
           _buildDetailRow('Motivo:', motivo),
           const SizedBox(height: 8),
-          
-          // Notas Posteriores a la Consulta
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(

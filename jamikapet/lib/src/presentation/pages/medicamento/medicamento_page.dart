@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:jamikapet/src/models/medicamento.dart';
+import 'package:jamikapet/src/services/medicamento_service.dart';
 import 'package:jamikapet/src/presentation/pages/menu/menu_page.dart';
 import 'package:jamikapet/src/presentation/pages/usuario/perfilUsuario_page.dart';
 import 'package:jamikapet/src/presentation/pages/IAchat/ia_chat_page.dart';
@@ -13,21 +15,34 @@ class MedicamentoPage extends StatefulWidget {
 
 class _MedicamentoPageState extends State<MedicamentoPage> {
   int _selectedIndex = 1;
+  bool _cargando = true;
+  List<Medicamento> listaMedicamentos = [];
 
-  // Lista dinámica para almacenar múltiples medicamentos
-  List<Map<String, dynamic>> listaMedicamentos = [
-    {
-      'nombre': 'Amoxicilina 250mg',
-      'dosis': '1 tableta',
-      'frecuencia': 'Cada 8 horas',
-      'horarios': '06:00, 14:00, 22:00',
-      'inicio': '28 - 09 - 2026',
-      'fin': '05 - 10 - 2026',
-      'veterinario': 'Dr. Carlos Mendoza',
-      'indicaciones': 'Administrar con alimento para evitar malestar estomacal.',
-      'esActivo': true,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _cargarMedicamentos();
+  }
+
+  Future<void> _cargarMedicamentos() async {
+    setState(() => _cargando = true);
+    try {
+      final medicamentos = await MedicamentoService.obtenerMedicamentos();
+      setState(() {
+        listaMedicamentos = medicamentos;
+        _cargando = false;
+      });
+    } catch (e) {
+      setState(() => _cargando = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar medicamentos: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   void _onItemTapped(int index) {
     if (index == _selectedIndex) return;
@@ -49,38 +64,47 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
     }
   }
 
-  // AGREGAR UN NUEVO MEDICAMENTO A LA LISTA
   void _abrirModalAgregar() {
     MedicamentoModal.show(
       context,
       esEdicion: false,
-      onSave: (datos) {
-        setState(() {
-          listaMedicamentos.add({
-            'nombre': datos['nombre'] ?? 'Medicamento',
-            'dosis': datos['dosis'] ?? '',
-            'frecuencia': datos['frecuencia'] ?? '',
-            'horarios': datos['horarios'] ?? '',
-            'inicio': datos['inicio'] ?? '',
-            'fin': datos['fin'] ?? '',
-            'veterinario': datos['veterinario'] ?? '',
-            'indicaciones': datos['indicaciones'] ?? '',
-            'esActivo': true,
-          });
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Medicamento agregado exitosamente!'),
-            backgroundColor: Color(0xFF1F7A70),
-            behavior: SnackBarBehavior.floating,
-          ),
+      onSave: (datos) async {
+        final nuevo = Medicamento(
+          mascotaId: '1',
+          nombre: datos['nombre'] ?? '',
+          dosis: datos['dosis'] ?? '',
+          frecuencia: datos['frecuencia'] ?? '',
+          horaAdministracion: datos['horarios'] ?? '',
+          fechaInicio: DateTime.tryParse(datos['inicio'] ?? '') ?? DateTime.now(),
+          fechaFinalizacion: DateTime.tryParse(datos['fin'] ?? '') ?? DateTime.now(),
+          indicaciones: datos['indicaciones'] ?? '',
+          veterinario: datos['veterinario'] ?? '',
         );
+
+        try {
+          await MedicamentoService.registrarMedicamento(nuevo);
+          _cargarMedicamentos();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Medicamento agregado exitosamente!'),
+              backgroundColor: Color(0xFF1F7A70),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al registrar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       },
     );
   }
 
-  // EDITAR UN MEDICAMENTO ESPECÍFICO DE LA LISTA
   void _abrirModalEditar(int index) {
     final med = listaMedicamentos[index];
 
@@ -88,42 +112,53 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
       context,
       esEdicion: true,
       datosIniciales: {
-        'nombre': med['nombre'].toString(),
-        'dosis': med['dosis'].toString(),
-        'frecuencia': med['frecuencia'].toString(),
-        'horarios': med['horarios'].toString(),
-        'inicio': med['inicio'].toString(),
-        'fin': med['fin'].toString(),
-        'veterinario': med['veterinario'].toString(),
-        'indicaciones': med['indicaciones'].toString(),
+        'nombre': med.nombre,
+        'dosis': med.dosis,
+        'frecuencia': med.frecuencia,
+        'horarios': med.horaAdministracion,
+        'inicio': med.fechaInicio.toIso8601String().split('T').first,
+        'fin': med.fechaFinalizacion.toIso8601String().split('T').first,
+        'veterinario': med.veterinario,
+        'indicaciones': med.indicaciones,
       },
-      onSave: (datos) {
-        setState(() {
-          listaMedicamentos[index] = {
-            'nombre': datos['nombre'] ?? med['nombre'],
-            'dosis': datos['dosis'] ?? med['dosis'],
-            'frecuencia': datos['frecuencia'] ?? med['frecuencia'],
-            'horarios': datos['horarios'] ?? med['horarios'],
-            'inicio': datos['inicio'] ?? med['inicio'],
-            'fin': datos['fin'] ?? med['fin'],
-            'veterinario': datos['veterinario'] ?? med['veterinario'],
-            'indicaciones': datos['indicaciones'] ?? med['indicaciones'],
-            'esActivo': med['esActivo'],
-          };
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tratamiento actualizado correctamente'),
-            backgroundColor: Color(0xFF1F7A70),
-            behavior: SnackBarBehavior.floating,
-          ),
+      onSave: (datos) async {
+        final editado = Medicamento(
+          id: med.id,
+          mascotaId: med.mascotaId,
+          nombre: datos['nombre'] ?? med.nombre,
+          dosis: datos['dosis'] ?? med.dosis,
+          frecuencia: datos['frecuencia'] ?? med.frecuencia,
+          horaAdministracion: datos['horarios'] ?? med.horaAdministracion,
+          fechaInicio: DateTime.tryParse(datos['inicio'] ?? '') ?? med.fechaInicio,
+          fechaFinalizacion: DateTime.tryParse(datos['fin'] ?? '') ?? med.fechaFinalizacion,
+          indicaciones: datos['indicaciones'] ?? med.indicaciones,
+          veterinario: datos['veterinario'] ?? med.veterinario,
         );
+
+        try {
+          await MedicamentoService.actualizarMedicamento(editado);
+          _cargarMedicamentos();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tratamiento actualizado correctamente'),
+              backgroundColor: Color(0xFF1F7A70),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al actualizar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       },
     );
   }
 
-  // REGISTRAR TOMA
   void _mostrarModalRegistrarToma(String medicamentoNombre, String dosis) {
     final TextEditingController notasController = TextEditingController();
     TimeOfDay horaSeleccionada = TimeOfDay.now();
@@ -305,121 +340,123 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _tarjetaEncabezado(),
-              const SizedBox(height: 18),
+        child: _cargando
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF1F7A70)))
+            : RefreshIndicator(
+                onRefresh: _cargarMedicamentos,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(18.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _tarjetaEncabezado(),
+                      const SizedBox(height: 18),
 
-              // Tabla de Horarios
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDDF3EC),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: const Color(0xFFB2DFDB)),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFC7EAE1),
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(14),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDDF3EC),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: const Color(0xFFB2DFDB)),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFC7EAE1),
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(14),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Próxima Dispensación',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Horario',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _buildRow('Hoy', '2:00 pm', isHighlight: true),
+                            const Divider(height: 1, color: Color(0xFFB2DFDB)),
+                            _buildRow('Hoy', '10:00 pm', isHighlight: true),
+                            const Divider(height: 1, color: Color(0xFFB2DFDB)),
+                            _buildRow('Mañana', '6:00 am', isHighlight: false),
+                          ],
                         ),
                       ),
-                      child: const Row(
+                      const SizedBox(height: 25),
+
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Próxima Dispensación',
+                          const Text(
+                            'Detalle del Tratamiento',
                             style: TextStyle(
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              color: darkText,
                             ),
                           ),
-                          Text(
-                            'Horario',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          ElevatedButton.icon(
+                            onPressed: _abrirModalAgregar,
+                            icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                            label: const Text(
+                              'Agregar',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1F7A70),
+                              elevation: 1,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    _buildRow('Hoy', '2:00 pm', isHighlight: true),
-                    const Divider(height: 1, color: Color(0xFFB2DFDB)),
-                    _buildRow('Hoy', '10:00 pm', isHighlight: true),
-                    const Divider(height: 1, color: Color(0xFFB2DFDB)),
-                    _buildRow('Mañana', '6:00 am', isHighlight: false),
-                  ],
+                      const SizedBox(height: 12),
+
+                      if (listaMedicamentos.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Text(
+                              'No hay medicamentos registrados.',
+                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                          ),
+                        )
+                      else
+                        ...listaMedicamentos.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final med = entry.value;
+
+                          return _buildTarjetaMedicamento(med, index);
+                        }),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 25),
-
-              // ENCABEZADO CON BOTÓN AGREGAR
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Detalle del Tratamiento',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: darkText,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _abrirModalAgregar,
-                    icon: const Icon(Icons.add, size: 18, color: Colors.white),
-                    label: const Text(
-                      'Agregar',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1F7A70),
-                      elevation: 1,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // RENDERIZADO DINÁMICO DE TODOS LOS MEDICAMENTOS DE LA LISTA
-              if (listaMedicamentos.isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text(
-                      'No hay medicamentos registrados.',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                  ),
-                )
-              else
-                ...listaMedicamentos.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final med = entry.value;
-
-                  return _buildTarjetaMedicamento(med, index);
-                }),
-            ],
-          ),
-        ),
       ),
 
       floatingActionButton: FloatingActionButton(
@@ -445,10 +482,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
     );
   }
 
-  // TARJETA DE CADA MEDICAMENTO
-  Widget _buildTarjetaMedicamento(Map<String, dynamic> med, int index) {
-    final bool activo = med['esActivo'] ?? true;
-
+  Widget _buildTarjetaMedicamento(Medicamento med, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(18),
@@ -470,7 +504,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                med['nombre'].toString(),
+                med.nombre,
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
@@ -483,14 +517,14 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: activo ? const Color(0xFFE8F5E9) : Colors.red.shade50,
+                  color: med.esActivo ? const Color(0xFFE8F5E9) : Colors.red.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  activo ? 'Activo' : 'Inactivo',
+                  med.esActivo ? 'Activo' : 'Inactivo',
                   style: TextStyle(
                     fontSize: 12,
-                    color: activo ? Colors.green : Colors.red,
+                    color: med.esActivo ? Colors.green : Colors.red,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -498,23 +532,22 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
             ],
           ),
           const Divider(height: 20),
-          _buildDetailItem('Dosis:', med['dosis'].toString()),
-          _buildDetailItem('Frecuencia:', med['frecuencia'].toString()),
-          _buildDetailItem('Hora de administración:', med['horarios'].toString()),
-          _buildDetailItem('Fecha de inicio:', med['inicio'].toString()),
-          _buildDetailItem('Fecha de finalización:', med['fin'].toString()),
-          _buildDetailItem('Veterinario:', med['veterinario'].toString()),
-          _buildDetailItem('Indicaciones:', med['indicaciones'].toString()),
+          _buildDetailItem('Dosis:', med.dosis),
+          _buildDetailItem('Frecuencia:', med.frecuencia),
+          _buildDetailItem('Hora de administración:', med.horaAdministracion),
+          _buildDetailItem('Fecha de inicio:', med.fechaInicio.toIso8601String().split('T').first),
+          _buildDetailItem('Fecha de finalización:', med.fechaFinalizacion.toIso8601String().split('T').first),
+          _buildDetailItem('Veterinario:', med.veterinario),
+          _buildDetailItem('Indicaciones:', med.indicaciones),
           const SizedBox(height: 14),
 
-          // Botones independientes para cada tarjeta
           Row(
             children: [
               Expanded(
                 child: ElevatedButton(
                   onPressed: () => _mostrarModalRegistrarToma(
-                    med['nombre'].toString(),
-                    med['dosis'].toString(),
+                    med.nombre,
+                    med.dosis,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFA8E6CF),
