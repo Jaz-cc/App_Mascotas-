@@ -171,11 +171,10 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
         backgroundColor: _Paleta.fondo,
         // ---------------- BARRA SUPERIOR ----------------
         appBar: const HeaderAppBar(
-          titulo: 'Registro Mascota',
+          titulo: 'Registro Pet',
           mostrarRegreso: true,        
           mostrarLogo: true,
           mostrarNotificaciones: true,
-          icon: Icons.assignment,
         ),
         // ---------------- CONTENIDO ----------------
         body: Column(

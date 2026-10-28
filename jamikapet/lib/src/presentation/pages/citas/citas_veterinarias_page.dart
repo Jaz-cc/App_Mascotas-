@@ -121,7 +121,6 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
         mostrarRegreso: true,
         mostrarLogo: true,
         mostrarNotificaciones: true,
-        icon: Icons.event_available_outlined
       ),
       body: Column(
         children: [

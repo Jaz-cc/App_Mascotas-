@@ -6,6 +6,7 @@ import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/services/desparacitacion_service.dart';
 import 'package:jamikapet/src/services/pets_service.dart';
+import 'package:jamikapet/src/presentation/widgets/desparactacion_modal.dart';
 
 class DewormingPage extends StatefulWidget {
   const DewormingPage({super.key});
@@ -17,7 +18,8 @@ class DewormingPage extends StatefulWidget {
 class _DewormingPageState extends State<DewormingPage> {
   List<Mascota> _mascotas = [];
   Mascota? _mascotaSeleccionada;
-  List<Desparasitacion> _tratamientos = [];
+  List<Desparasitacion> _tratamientos = [];        // historial  <- FALTABA
+  List<ProductoDesparasitante> _productos = []; 
   bool _cargandoMascotas = true;
   bool _cargandoTratamientos = false;
   String? _error;
@@ -28,8 +30,105 @@ class _DewormingPageState extends State<DewormingPage> {
     _cargarInicial();
   }
 
-  Future<String?> _obtenerToken() async => null;
+  void _snack(String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensaje)),
+    );
+  }
 
+  // REGISTRAR
+  Future<void> _abrirModalRegistrar() {
+    return DesparasitacionModal.show(
+      context,
+      mascotas: _mascotas,
+      productos: _productos,
+      mascotaInicial: _mascotaSeleccionada,
+      onSave: (d) async {
+        await DesparasitacionService.registrar(
+          mascotaId: d.mascota.id,
+          productoId: d.producto.id,
+          fechaAplicacion: d.fechaAplicacion,
+          proximaDosis: d.proximaDosis,
+          estado: d.estado,
+        );
+
+        if (!mounted) return;
+        setState(() => _mascotaSeleccionada = d.mascota);
+        _cargarTratamientos(); // sin await: el modal se cierra de inmediato
+        _snack('Tratamiento registrado correctamente');
+      },
+    );
+  }
+
+  // ACTUALIZAR
+  Future<void> _abrirModalEditar(Desparasitacion tratamiento) {
+    final id = tratamiento.id;
+
+    return DesparasitacionModal.show(
+      context,
+      mascotas: _mascotas,
+      productos: _productos,
+      mascotaInicial: _mascotaSeleccionada,
+      tratamiento: tratamiento,
+      onSave: (d) async {
+        await DesparasitacionService.actualizar(
+          id: id,
+          productoId: d.producto.id,
+          fechaAplicacion: d.fechaAplicacion,
+          proximaDosis: d.proximaDosis,
+          estado: d.estado,
+        );
+
+        if (!mounted) return;
+        _cargarTratamientos();
+        _snack('Tratamiento actualizado correctamente');
+      },
+    );
+  }
+
+  // ELIMINAR DESPARACITACION
+  Future<void> _eliminarTratamiento(Desparasitacion tratamiento) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar desparasitación'),
+        content: Text(
+          '¿Deseas eliminar "${tratamiento.producto}" del historial de '
+          '${_mascotaSeleccionada?.nombrePet ?? 'tu mascota'}? '
+          'Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      await DesparasitacionService.eliminar(tratamiento.id);
+
+      if (!mounted) return;
+      setState(() => _tratamientos.removeWhere((t) => t.id == tratamiento.id));
+      _snack('Tratamiento eliminado correctamente');
+    } catch (error) {
+      if (!mounted) return;
+      _snack(error.toString());
+    }
+  }
+
+  // CARGA MASCOTAS
   Future<void> _cargarInicial() async {
     setState(() {
       _cargandoMascotas = true;
@@ -38,11 +137,17 @@ class _DewormingPageState extends State<DewormingPage> {
 
     try {
       
-      final mascotas = await PetsService.obtenerMascotas();
+      final resultados = await Future.wait([
+        PetsService.obtenerMascotas(),
+        DesparasitacionService.obtenerProductos(),
+      ]);
+      final mascotas = resultados[0] as List<Mascota>;
+      final productos = resultados[1] as List<ProductoDesparasitante>;
       if (!mounted) return;
 
       setState(() {
         _mascotas = mascotas;
+        _productos = productos;
         _mascotaSeleccionada = mascotas.isEmpty
             ? null
             : mascotas.firstWhere(
@@ -73,9 +178,9 @@ class _DewormingPageState extends State<DewormingPage> {
     });
 
     try {
-      final token = await _obtenerToken();
-      final tratamientos = await DesparasitacionService(token: token)
-          .obtenerPorMascota(mascota.id);
+      final tratamientos =
+          await DesparasitacionService.obtenerPorMascota(mascota.id);
+
       if (!mounted || _mascotaSeleccionada?.id != mascota.id) return;
       setState(() => _tratamientos = tratamientos);
     } catch (error) {
@@ -139,7 +244,6 @@ class _DewormingPageState extends State<DewormingPage> {
         mostrarLogo: true,
         mostrarRegreso: true,
         mostrarNotificaciones: true,
-        icon: Icons.bug_report_outlined,
       ),
       body: Column(
         children: [
@@ -622,10 +726,12 @@ class _DewormingPageState extends State<DewormingPage> {
                   size: 22,
                 ),
               ),
+                            
               const SizedBox(width: 10),
+
               Expanded(
                 child: Text(
-                  tratamiento.nombre,
+                  tratamiento.producto,
                   style: const TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
@@ -633,6 +739,7 @@ class _DewormingPageState extends State<DewormingPage> {
                   ),
                 ),
               ),
+
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
@@ -655,14 +762,49 @@ class _DewormingPageState extends State<DewormingPage> {
                   ],
                 ),
               ),
+              
+              const SizedBox(width: 4),
+              
+              Semantics(
+                button: true,
+                label: 'Editar tratamiento',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _abrirModalEditar(tratamiento),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: _Paleta.primarioOscuro,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(width: 2),
+              
+              Semantics(
+                button: true,
+                label: 'Eliminar tratamiento',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _eliminarTratamiento(tratamiento),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
+         
           const SizedBox(height: 10),
-          Text(
-            tratamiento.producto,
-            style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
-          ),
-          const SizedBox(height: 10),
+          
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -712,13 +854,12 @@ class _DewormingPageState extends State<DewormingPage> {
 
   // ===============================================================
   // BOTÓN REGISTRAR
-  // ===============================================================
   Widget _botonRegistrar() {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton.icon(
-        onPressed: () => _mostrarFormulario(context),
+        onPressed: _abrirModalRegistrar,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
           'Registrar desparasitación',
@@ -738,281 +879,6 @@ class _DewormingPageState extends State<DewormingPage> {
 
   // ===============================================================
   // FORMULARIO (DIÁLOGO)
-  // ===============================================================
-  void _mostrarFormulario(BuildContext context) {
-    final productoController = TextEditingController();
-    DateTime? fechaAplicacion;
-    DateTime? proximaDosis;
-    Mascota? mascotaDelFormulario = _mascotaSeleccionada;
-    bool guardando = false;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, actualizarDialogo) {
-            String formatearCorta(DateTime? f) {
-              if (f == null) return '';
-              return '${f.day.toString().padLeft(2, '0')}/'
-                  '${f.month.toString().padLeft(2, '0')}/${f.year}';
-            }
-
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Nueva desparasitación',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: _Paleta.tinta,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Mascota
-                      const Text(
-                        'Mascota',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _Paleta.tintaSuave,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _mascotas.map((mascota) {
-                          final activa = mascota.id == mascotaDelFormulario?.id;
-                          return ChoiceChip(
-                            label: Text(mascota.nombrePet),
-                            selected: activa,
-                            onSelected: (_) => actualizarDialogo(
-                              () => mascotaDelFormulario = mascota,
-                            ),
-                            selectedColor: _Paleta.verdeMuyClaro,
-                            backgroundColor: Colors.white,
-                            side: BorderSide(
-                              color: activa
-                                  ? _Paleta.primarioOscuro
-                                  : _Paleta.borde,
-                            ),
-                            labelStyle: const TextStyle(
-                              fontSize: 12.5,
-                              color: _Paleta.tinta,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextField(
-                        controller: productoController,
-                        decoration: InputDecoration(
-                          labelText: 'Nombre del producto',
-                          filled: true,
-                          fillColor: _Paleta.campo,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _campoFecha(
-                        etiqueta: fechaAplicacion == null
-                            ? 'Fecha de aplicación'
-                            : formatearCorta(fechaAplicacion),
-                        onTap: () async {
-                          final fecha = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2100),
-                          );
-                          if (fecha != null) {
-                            actualizarDialogo(() => fechaAplicacion = fecha);
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      _campoFecha(
-                        etiqueta: proximaDosis == null
-                            ? 'Próxima dosis'
-                            : formatearCorta(proximaDosis),
-                        onTap: () async {
-                          final fecha = await showDatePicker(
-                            context: context,
-                            initialDate: fechaAplicacion ?? DateTime.now(),
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2100),
-                          );
-                          if (fecha != null) {
-                            actualizarDialogo(() => proximaDosis = fecha);
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              onPressed: guardando
-                                  ? null
-                                  : () => Navigator.pop(dialogContext),
-                              child: const Text(
-                                'Cancelar',
-                                style: TextStyle(color: _Paleta.tintaSuave),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _Paleta.primario,
-                                foregroundColor: _Paleta.tinta,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: guardando
-                                  ? null
-                                  : () async {
-                                      if (mascotaDelFormulario == null ||
-                                          productoController.text
-                                              .trim()
-                                              .isEmpty ||
-                                          fechaAplicacion == null ||
-                                          proximaDosis == null) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  'Completa todos los campos',
-                                                ),
-                                              ),
-                                            );
-                                        return;
-                                      }
-
-                                      actualizarDialogo(() => guardando = true);
-                                      try {
-                                        await DesparasitacionService(
-                                          token: await _obtenerToken(),
-                                        ).registrar(
-                                          mascotaId: mascotaDelFormulario!.id,
-                                          nombre: 'Desparasitación',
-                                          producto: productoController.text
-                                              .trim(),
-                                          fechaAplicacion: fechaAplicacion!,
-                                          proximaDosis: proximaDosis!,
-                                        );
-
-                                        if (!mounted) return;
-                                        setState(() {
-                                          _mascotaSeleccionada =
-                                              mascotaDelFormulario;
-                                        });
-                                        if (dialogContext.mounted) {
-                                          Navigator.pop(dialogContext);
-                                        }
-                                        await _cargarTratamientos();
-                                        if (!mounted) return;
-                                        ScaffoldMessenger.of(this.context)
-                                            .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  'Tratamiento registrado correctamente',
-                                                ),
-                                              ),
-                                            );
-                                      } catch (error) {
-                                        if (!mounted) return;
-                                        if (dialogContext.mounted) {
-                                          actualizarDialogo(
-                                            () => guardando = false,
-                                          );
-                                        }
-                                        ScaffoldMessenger.of(this.context)
-                                            .showSnackBar(
-                                              SnackBar(
-                                                content: Text(error.toString()),
-                                              ),
-                                            );
-                                      }
-                                    },
-                              child: guardando
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text('Guardar'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _campoFecha({required String etiqueta, required VoidCallback onTap}) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          color: _Paleta.campo,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _Paleta.borde),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              etiqueta,
-              style: const TextStyle(fontSize: 14, color: _Paleta.tinta),
-            ),
-            const Icon(
-              Icons.calendar_month_outlined,
-              size: 18,
-              color: _Paleta.primarioOscuro,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   String _formatearFecha(DateTime? fecha) {
     if (fecha == null) return 'Pendiente';
     return '${fecha.day.toString().padLeft(2, '0')} - '
@@ -1023,7 +889,6 @@ class _DewormingPageState extends State<DewormingPage> {
 // ================================================================
 // PALETA
 // ================================================================
-
 class _Paleta {
   static const fondo = Color(0xFFE1F5F2);
   static const primario = Color(0xFF55C8BD);

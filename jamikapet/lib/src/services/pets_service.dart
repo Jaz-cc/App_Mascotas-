@@ -19,7 +19,7 @@ class PetsServiceException implements Exception {
 class PetsService {
   PetsService._();
 
-  /// Obtiene los encabezados con el token JWT.
+  // Obtiene los encabezados con el token JWT.
   static Future<Map<String, String>> _obtenerHeaders() async {
 
     final token = await TokenStorage.getToken();
@@ -38,7 +38,7 @@ class PetsService {
     };
   }
 
-  /// Convierte la ruta de la imagen en una URL completa.
+  // Convierte la ruta de la imagen en una URL completa.
   static String? urlFoto(String? image) {
     if (image == null || image.trim().isEmpty) {
       return null;
@@ -223,7 +223,7 @@ class PetsService {
 
   // Obtiene todas las mascotas del usuario autenticado.
   static Future<List<Mascota>> obtenerMascotas() async {
-     final headers = await _obtenerHeaders();
+    final headers = await _obtenerHeaders();
 
     try {
       final response = await http

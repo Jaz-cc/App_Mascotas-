@@ -447,7 +447,6 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
         mostrarRegreso: true,
         mostrarLogo: true,
         mostrarNotificaciones: true,
-        icon: Icons.medication_outlined,
       ),
       body: Column(
         children: [

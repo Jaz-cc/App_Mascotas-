@@ -2,65 +2,170 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:jamikapet/src/core/network/api_config.dart';
+import 'package:jamikapet/src/core/storage/token_storage.dart';
 import 'package:jamikapet/src/models/desparasitacion.dart';
 
 class DesparasitacionException implements Exception {
   final String mensaje;
-
   const DesparasitacionException(this.mensaje);
 
   @override
   String toString() => mensaje;
 }
 
+/// Producto del catálogo (GET /desparasitaciones).
+class ProductoDesparasitante {
+  final int id;
+  final String nombre;
+  final String? descripcion;
+  final String? especie;
+
+  const ProductoDesparasitante({
+    required this.id,
+    required this.nombre,
+    this.descripcion,
+    this.especie,
+  });
+
+  factory ProductoDesparasitante.fromJson(Map<String, dynamic> json) {
+    return ProductoDesparasitante(
+      id: (json['id'] as num).toInt(),
+      nombre: (json['nombre'] ?? '').toString(),
+      descripcion: json['descripcion']?.toString(),
+      especie: json['especie']?.toString(),
+    );
+  }
+}
+
 class DesparasitacionService {
-  static const String origin = 'http://10.0.2.2:3000';
-  static const String baseUrl = '$origin/api/desparasitaciones';
+  DesparasitacionService._();
 
-  static const Duration _timeout = Duration(seconds: 15);
+  // Controller de Nest: @Controller('desparasitaciones')
+  static String get _base => '${ApiConfig.baseUrl}/desparasitaciones';
 
-  final String? token;
+  static Future<Map<String, String>> _obtenerHeaders() async {
+    final token = await TokenStorage.getToken();
 
-  DesparasitacionService({this.token});
-
-  Map<String, String> get _headers => {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        if (token != null && token!.isNotEmpty)
-          'Authorization': 'Bearer $token',
-      };
-
-  Future<List<Desparasitacion>> obtenerPorMascota(
-    int mascotaId,
-  ) async {
-    try {
-      final uri = Uri.parse(baseUrl).replace(
-        queryParameters: {
-          'mascotaId': mascotaId.toString(),
-        },
+    if (token == null || token.trim().isEmpty) {
+      throw const DesparasitacionException(
+        'Tu sesión no tiene un token guardado. '
+        'Cierra sesión e inicia sesión nuevamente.',
       );
+    }
+
+    return {
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Accept': 'application/json',
+      'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
+    };
+  }
+
+  /// Ejecuta una petición y traduce los errores técnicos a mensajes claros.
+  static Future<T> _ejecutar<T>(Future<T> Function() accion) async {
+    try {
+      return await accion();
+    } on DesparasitacionException {
+      rethrow;
+    } on SocketException {
+      throw const DesparasitacionException('No hay conexión con el servidor.');
+    } on TimeoutException {
+      throw const DesparasitacionException(
+        'El servidor tardó demasiado en responder.',
+      );
+    } on FormatException {
+      throw const DesparasitacionException(
+        'El servidor devolvió una respuesta inválida.',
+      );
+    }
+  }
+
+  static void _validarRespuesta(
+    http.Response response,
+    String porDefecto, {
+    List<int> permitidos = const [200],
+  }) {
+    if (response.statusCode == 401) {
+      throw const DesparasitacionException(
+        'Tu sesión expiró. Inicia sesión de nuevo.',
+      );
+    }
+    if (!permitidos.contains(response.statusCode)) {
+      throw DesparasitacionException(_error(response, porDefecto));
+    }
+  }
+
+  static String _fecha(DateTime d) => d.toIso8601String().split('T').first;
+
+  /// El backend devuelve la entidad DesparasitacionHasPet:
+  ///   { id, idProduc, idMascota, fechaAplicacion, proximaDosis, estado,
+  ///     desparasitacion: { id, nombre, descripcion, especie } }
+  /// Aquí se convierte al formato que espera Desparasitacion.fromJson.
+  static Desparasitacion _aModelo(dynamic item) {
+    final json = Map<String, dynamic>.from(item as Map);
+    final producto = json['desparasitacion'] is Map
+        ? Map<String, dynamic>.from(json['desparasitacion'] as Map)
+        : <String, dynamic>{};
+
+    return Desparasitacion.fromJson({
+      'id': json['id'],
+      'mascotaId': json['idMascota'] ?? json['mascotaId'],
+      'nombre': 'Desparasitación',
+      'producto': producto['nombre'] ?? json['producto'] ?? '',
+      'fechaAplicacion': json['fechaAplicacion'],
+      'proximaDosis': json['proximaDosis'],
+      'estado': json['estado'] ?? 'Pendiente',
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // CATÁLOGO: GET /desparasitaciones
+  // ------------------------------------------------------------------
+  static Future<List<ProductoDesparasitante>> obtenerProductos() {
+    return _ejecutar(() async {
+      final headers = await _obtenerHeaders();
 
       final response = await http
-          .get(uri, headers: _headers)
-          .timeout(_timeout);
+          .get(Uri.parse(_base), headers: headers)
+          .timeout(ApiConfig.timeout);
 
-      if (response.statusCode == 401) {
+      _validarRespuesta(response, 'No se pudo cargar el catálogo de productos.');
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (data is! List) {
         throw const DesparasitacionException(
-          'Tu sesión expiró. Inicia sesión de nuevo.',
+          'Respuesta inesperada del servidor.',
         );
       }
 
-      if (response.statusCode != 200) {
-        throw DesparasitacionException(
-          _error(response, 'No se pudo cargar el historial.'),
-        );
-      }
+      return data
+          .map<ProductoDesparasitante>(
+            (e) => ProductoDesparasitante.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList();
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // HISTORIAL: GET /desparasitaciones/aplicaciones/mascota/:idMascota
+  // ------------------------------------------------------------------
+  static Future<List<Desparasitacion>> obtenerPorMascota(int mascotaId) {
+    return _ejecutar(() async {
+      final headers = await _obtenerHeaders();
+
+      final response = await http
+          .get(
+            Uri.parse('$_base/aplicaciones/mascota/$mascotaId'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.timeout);
+
+      _validarRespuesta(response, 'No se pudo cargar el historial.');
 
       dynamic data = jsonDecode(utf8.decode(response.bodyBytes));
-
-      if (data is Map) {
-        data = data['data'] ?? data['desparasitaciones'];
-      }
+      if (data is Map) data = data['data'];
 
       if (data is! List) {
         throw const DesparasitacionException(
@@ -68,112 +173,121 @@ class DesparasitacionService {
         );
       }
 
-      return data.map<Desparasitacion>((item) {
-        return Desparasitacion.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        );
-      }).toList();
-    } on DesparasitacionException {
-      rethrow;
-    } on SocketException {
-      throw const DesparasitacionException(
-        'No hay conexión con el servidor.',
-      );
-    } on TimeoutException {
-      throw const DesparasitacionException(
-        'El servidor tardó demasiado en responder.',
-      );
-    } on FormatException {
-      throw const DesparasitacionException(
-        'El servidor devolvió una respuesta inválida.',
-      );
-    }
+      return data.map<Desparasitacion>(_aModelo).toList();
+    });
   }
 
-  Future<Desparasitacion> registrar({
+  // ------------------------------------------------------------------
+  // REGISTRAR: POST /desparasitaciones/aplicaciones
+  // ------------------------------------------------------------------
+  static Future<Desparasitacion> registrar({
     required int mascotaId,
-    required String nombre,
-    required String producto,
+    required int productoId,
     required DateTime fechaAplicacion,
     required DateTime proximaDosis,
-  }) async {
-    try {
+    String estado = 'Aplicada',
+  }) {
+    return _ejecutar(() async {
+      final headers = await _obtenerHeaders();
+
       final response = await http
           .post(
-            Uri.parse(baseUrl),
-            headers: _headers,
+            Uri.parse('$_base/aplicaciones'),
+            headers: headers,
             body: jsonEncode({
-              'mascotaId': mascotaId,
-              'nombre': nombre,
-              'producto': producto,
-              'fechaAplicacion':
-                  fechaAplicacion.toIso8601String(),
-              'proximaDosis':
-                  proximaDosis.toIso8601String(),
-              'estado': 'Aplicada',
+              'idMascota': mascotaId,
+              'idProduc': productoId,
+              'fechaAplicacion': _fecha(fechaAplicacion),
+              'proximaDosis': _fecha(proximaDosis),
+              'estado': estado,
             }),
           )
-          .timeout(_timeout);
+          .timeout(ApiConfig.timeout);
 
-      if (response.statusCode == 401) {
-        throw const DesparasitacionException(
-          'Tu sesión expiró. Inicia sesión de nuevo.',
-        );
-      }
+      _validarRespuesta(
+        response,
+        'No se pudo registrar el tratamiento.',
+        permitidos: const [200, 201],
+      );
 
-      if (response.statusCode != 200 &&
-          response.statusCode != 201) {
-        throw DesparasitacionException(
-          _error(response, 'No se pudo registrar el tratamiento.'),
-        );
-      }
-
-      dynamic data = jsonDecode(utf8.decode(response.bodyBytes));
-
-      if (data is Map) {
-        data = data['data'] ?? data['desparasitacion'] ?? data;
-      }
-
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
       if (data is! Map) {
         throw const DesparasitacionException(
           'El servidor devolvió una respuesta inválida.',
         );
       }
 
-      return Desparasitacion.fromJson(
-        Map<String, dynamic>.from(data),
-      );
-    } on DesparasitacionException {
-      rethrow;
-    } on SocketException {
-      throw const DesparasitacionException(
-        'No hay conexión con el servidor.',
-      );
-    } on TimeoutException {
-      throw const DesparasitacionException(
-        'El servidor tardó demasiado en responder.',
-      );
-    } on FormatException {
-      throw const DesparasitacionException(
-        'El servidor devolvió una respuesta inválida.',
-      );
-    }
+      return _aModelo(data);
+    });
   }
 
-  String _error(http.Response response, String porDefecto) {
+  // ------------------------------------------------------------------
+  // ACTUALIZAR: PATCH /desparasitaciones/aplicaciones/:id
+  // ------------------------------------------------------------------
+  static Future<Desparasitacion> actualizar({
+    required int id,
+    required int productoId,
+    required DateTime fechaAplicacion,
+    required DateTime proximaDosis,
+    required String estado,
+  }) {
+    return _ejecutar(() async {
+      final headers = await _obtenerHeaders();
+
+      final response = await http
+          .patch(
+            Uri.parse('$_base/aplicaciones/$id'),
+            headers: headers,
+            body: jsonEncode({
+              'idProduc': productoId,
+              'fechaAplicacion': _fecha(fechaAplicacion),
+              'proximaDosis': _fecha(proximaDosis),
+              'estado': estado,
+            }),
+          )
+          .timeout(ApiConfig.timeout);
+
+      _validarRespuesta(response, 'No se pudo actualizar el tratamiento.');
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (data is! Map) {
+        throw const DesparasitacionException(
+          'El servidor devolvió una respuesta inválida.',
+        );
+      }
+
+      return _aModelo(data);
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // DELETE /desparasitaciones/aplicaciones/:id
+  // ------------------------------------------------------------------
+  static Future<void> eliminar(int id) {
+    return _ejecutar(() async {
+      final headers = await _obtenerHeaders();
+
+      final response = await http
+          .delete(Uri.parse('$_base/aplicaciones/$id'), headers: headers)
+          .timeout(ApiConfig.timeout);
+
+      _validarRespuesta(
+        response,
+        'No se pudo eliminar el tratamiento.',
+        permitidos: const [200, 204],
+      );
+    });
+  }
+
+  static String _error(http.Response response, String porDefecto) {
     try {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
 
       if (data is Map) {
         final mensaje = data['message'] ?? data['mensaje'];
 
-        if (mensaje is String && mensaje.isNotEmpty) {
-          return mensaje;
-        }
-
-        if (mensaje is List && mensaje.isNotEmpty) {
-          return mensaje.join('\n');
-        }
+        if (mensaje is String && mensaje.isNotEmpty) return mensaje;
+        if (mensaje is List && mensaje.isNotEmpty) return mensaje.join('\n');
       }
     } catch (_) {}
 
