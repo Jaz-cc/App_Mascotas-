@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
+import 'package:jamikapet/src/presentation/widgets/cita_modal.dart';
+import 'package:jamikapet/src/models/mascota.dart';
+import 'package:jamikapet/src/models/consulta.dart';
+import 'package:jamikapet/src/services/citas_service.dart';
+import 'package:jamikapet/src/services/pets_service.dart';
 
 class CitasVeterinariasPage extends StatefulWidget {
   const CitasVeterinariasPage({super.key});
@@ -10,440 +15,353 @@ class CitasVeterinariasPage extends StatefulWidget {
   State<CitasVeterinariasPage> createState() => _CitasVeterinariasPageState();
 }
 
-class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
-  bool _notificacionActiva = true;
+class _CitasVeterinariasPageState
+    extends State<CitasVeterinariasPage> {
+  bool _cargando = true;
+  List<Mascota> _mascotas = [];
 
-  // Diálogo para registrar una nueva cita o veterinario
-  void _mostrarDialogoNuevaCita() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+  String? _error;
+  List<Consulta> _citas = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarCitas();
+  }
+
+  Future<void> _cargarCitas() async {
+    if (mounted) {
+      setState(() {
+        _cargando = true;
+        _error = null;
+      });
+    }
+
+    try {
+      final resultados = await Future.wait([
+        CitasService.obtenerCitas(),
+        PetsService.obtenerMascotas(),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        _citas = resultados[0] as List<Consulta>;
+        _mascotas = resultados[1] as List<Mascota>;
+        _cargando = false;
+      });
+
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _error = e.toString();
+        _cargando = false;
+      });
+    }
+  }
+
+  void _mensaje(String mensaje, {bool error = false}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        backgroundColor: error
+            ? Colors.red.shade700
+            : const Color(0xFF00695C),
       ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            top: 20,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Registrar Cita / Veterinario',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 15),
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'Nombre del Veterinario',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.person_outline),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'Clínica Veterinaria',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.local_hospital_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'Motivo de Consulta',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.medical_information_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Fecha y Hora',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        prefixIcon: const Icon(Icons.calendar_today_outlined),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00695C),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('¡Cita registrada correctamente!'),
-                        backgroundColor: Color(0xFF00695C),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Guardar Cita',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
+    );
+  }
+
+  Future<void> _abrirModal([Consulta? cita]) async {
+    if (_mascotas.isEmpty) {
+      _mensaje('Primero registra una mascota.', error: true);
+      return;
+    }
+
+    await CitaModal.show(
+      context,
+      mascotas: _mascotas,
+      cita: cita,
+      onSave: (d) async {
+
+        if (cita == null) {
+          await CitasService.registrarCita(
+            Consulta(
+              mascotaId: d.mascota.id, // se muestra el nombre, se guarda el id
+              veterinario: d.veterinario,
+              motivo: d.motivo,
+              fecha: d.fecha,
+              hora: d.hora,
+              estado: d.estado,
+              notas: d.notas,
+            ),
+          );
+        } else {
+          await CitasService.actualizarCita(cita.id!, {
+            'mascotaId': d.mascota.id,
+            'veterinario': d.veterinario,
+            'motivo': d.motivo,
+            'fecha': d.fecha.toIso8601String().split('T').first,
+            'hora': d.hora,
+            'estado': d.estado,
+            'notas': d.notas,
+          });
+        }
+
+        if (!mounted) return;
+
+        await _cargarCitas();
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    const primaryBackground = Color(0xFFE2F4F1);
-    const darkText = Colors.black87;
+  Future<void> _cambiarEstado(
+    Consulta cita,
+    String estado,
+  ) async {
+    if (cita.id == null) return;
 
-    return Scaffold(
-      backgroundColor: primaryBackground,
-      appBar: const HeaderAppBar(
-        titulo: 'Citas',
-        mostrarRegreso: true,
-        mostrarLogo: true,
-        mostrarNotificaciones: true,
+    try {
+      await CitasService.actualizarCita(
+        cita.id!,
+        {'estado': estado},
+      );
+
+      _mensaje('Estado actualizado: $estado');
+      await _cargarCitas();
+    } catch (e) {
+      _mensaje(
+        'No se pudo actualizar el estado: $e',
+        error: true,
+      );
+    }
+  }
+
+  Future<void> _eliminarCita(Consulta cita) async {
+    if (cita.id == null) return;
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar cita'),
+        content: const Text(
+          '¿Deseas eliminar esta cita veterinaria?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
       ),
-      body: Column(
-        children: [
-          // Contenido de la pantalla
-          Expanded(
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(18.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [                    
-                    _tarjetaEncabezado(),
-                    const SizedBox(height: 18),
-                    // Seccion: Próxima Cita & Notificaciones
-                    const Text(
-                      'Próxima Cita',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: darkText,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
+    );
 
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFB2DFDB)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE0F2F1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.event, color: Color(0xFF00695C)),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  const Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '15 de Octubre, 2026',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      Text(
-                                        '10:30 AM',
-                                        style: TextStyle(color: Colors.black54, fontSize: 13),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              // Control de Notificaciones
-                              Row(
-                                children: [
-                                  const Icon(Icons.notifications_active_outlined,
-                                      size: 20, color: Colors.teal),
-                                  Switch(
-                                    value: _notificacionActiva,
-                                    activeThumbColor: const Color(0xFF00695C),
-                                    onChanged: (val) {
-                                      setState(() => _notificacionActiva = val);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 24),
-                          _buildDetailRow('Veterinario:', 'Dr. Carlos Mendoza'),
-                          _buildDetailRow('Clínica:', 'Veterinaria Mascotas Sanas'),
-                          _buildDetailRow('Motivo:', 'Chequeo General y Control de Peso'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+    if (confirmar != true) return;
 
-                    // Botón Registrar Nueva Cita / Veterinario
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _mostrarDialogoNuevaCita,
-                        icon: const Icon(Icons.add_circle_outline, color: darkText),
-                        label: const Text(
-                          'Registrar Nueva Cita / Veterinario',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: darkText,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFA8E6CF),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: const BorderSide(color: Color(0xFF81C784)),
-                          ),
+    try {
+      await CitasService.eliminarCita(cita.id!);
+
+      _mensaje('Cita eliminada correctamente.');
+      await _cargarCitas();
+    } catch (e) {
+      _mensaje(
+        'No se pudo eliminar la cita: $e',
+        error: true,
+      );
+    }
+  }
+
+  String _formatearFecha(DateTime fecha) {
+    final dia = fecha.day.toString().padLeft(2, '0');
+    final mes = fecha.month.toString().padLeft(2, '0');
+
+    return '$dia/$mes/${fecha.year}';
+  }
+
+  String _formatearHora(String hora) {
+    return hora.length >= 5 ? hora.substring(0, 5) : hora;
+  }
+
+  String _nombreMascota(int id) {
+    return _mascotas.where((m) => m.id == id).firstOrNull?.nombrePet ??
+        'Mascota #$id';
+  }
+
+  // Color _colorEstado(String estado) {
+  //   switch (estado) {
+  //     case 'Confirmada':
+  //       return const Color(0xFF00695C);
+  //     case 'Completada':
+  //       return Colors.green;
+  //     case 'Rechazada':
+  //     case 'Cancelada':
+  //       return Colors.red;
+  //     default: // Pendiente = esperando respuesta del veterinario
+  //       return Colors.orange.shade800;
+  //   }
+  // }
+
+  Widget _tarjetaCita(Consulta cita) {
+    // final colorEstado = _colorEstado(cita.estado);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: Colors.white,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFFB2DFDB)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.event_note,
+                  color: Color(0xFF00695C),
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cita.motivo,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 25),
-
-                    // Sección: Historial de Citas y Notas Posteriores
-                    const Text(
-                      'Historial de Citas',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: darkText,
+                      const SizedBox(height: 5),
+                      Text(
+                        '${_formatearFecha(cita.fecha)} · ${_formatearHora(cita.hora)}',
                       ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildHistorialCard(
-                      fecha: '20 Sep 2026 - 04:00 PM',
-                      veterinario: 'Dra. María Fernández',
-                      clinica: 'Hospital Veterinario Central',
-                      motivo: 'Vacunación Anual',
-                      notas: 'Mascota en excelente estado. Aplicada vacuna sextuple. Se sugiere control en 1 mes.',
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildHistorialCard(
-                      fecha: '05 Jun 2026 - 11:00 AM',
-                      veterinario: 'Dr. Carlos Mendoza',
-                      clinica: 'Veterinaria Mascotas Sanas',
-                      motivo: 'Limpieza Dental',
-                      notas: 'Procedimiento exitoso. Se formuló enjuague bucal antiséptico por 5 días.',
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'Acciones',
+                  onSelected: (accion) {
+                    switch (accion) {
+                      case 'editar':
+                        _abrirModal(cita);
+                        break;
+                      case 'completar':
+                        _cambiarEstado(cita, 'Completada');
+                        break;
+                      case 'cancelar':
+                        _cambiarEstado(cita, 'Cancelada');
+                        break;
+                      case 'eliminar':
+                        _eliminarCita(cita);
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'editar',
+                      child: Text('Editar cita'),
+                    ),                    
+                    const PopupMenuItem(
+                      value: 'eliminar',
+                      child: Text('Eliminar cita'),
                     ),
                   ],
                 ),
-              ),
-            ),
-          ),
-          // ===============================================================
-          // PIE DE PÁGINA / BARRA INFERIOR
-          // ===============================================================
-          AppBottomNavigation(
-            currentIndex: 1,
-            onItemSelected: (index) {
-              switch (index) {
-                case 0:
-                  Navigator.pushNamed(context, AppRoutes.home,);
-                  break;
-
-                case 1:
-                  Navigator.pushNamed(context, AppRoutes.menu,);
-                  break;
-
-                case 2:
-                  Navigator.pushNamed(context, AppRoutes.pets,);
-                  break;
-                
-                case 3:
-                  Navigator.pushNamed(context, AppRoutes.perfil,);
-                  break;
-              }
-            },
-          ),
-        ]        
-      )
-    );
-  }
-
-  // ===============================================================
-  // ENCABEZADO
-  // ===============================================================
-  Widget _tarjetaEncabezado() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x140F3D3A),
-            blurRadius: 16,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: const BoxDecoration(
-              color: _Paleta.verdeMuyClaro,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.medical_information_outlined,
-              color: _Paleta.primarioOscuro,
-              size: 27,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Citas Veterinarias',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: _Paleta.tinta,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Agenda y organiza las citas veterinarias para cuidar la salud de tu mascota.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    height: 1.35,
-                    color: _Paleta.tintaSuave,
-                  ),
-                ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(fontSize: 14, color: Colors.black87),
-          children: [
-            TextSpan(
-              text: '$label ',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            TextSpan(text: value),
+            const Divider(height: 22),
+            _detalle('Mascota:', _nombreMascota(cita.mascotaId)),
+            _detalle('Veterinario:', cita.veterinario),
+            _detalle('Notas:', cita.notas ?? 'Sin notas'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHistorialCard({
-    required String fecha,
-    required String veterinario,
-    required String clinica,
-    required String motivo,
-    required String notas,
+  Widget _detalle(
+    String etiqueta,
+    String valor, {
+    Color? color,
   }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 14,
+          ),
+          children: [
+            TextSpan(
+              text: '$etiqueta ',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextSpan(
+              text: valor,
+              style: TextStyle(color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _encabezado() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFB2DFDB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                fecha,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF00695C),
-                  fontSize: 14,
-                ),
-              ),
-              const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
-            ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          const Divider(height: 16),
-          _buildDetailRow('Veterinario:', veterinario),
-          _buildDetailRow('Clínica:', clinica),
-          _buildDetailRow('Motivo:', motivo),
-          const SizedBox(height: 8),
-          
-          // Notas Posteriores a la Consulta
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF8E1),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFFFE082)),
-            ),
-            child: Row(
+        ],
+      ),
+      child: const Row(
+        children: [
+          Icon(
+            Icons.medical_information_outlined,
+            color: Color(0xFF00695C),
+            size: 40,
+          ),
+          SizedBox(width: 14),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.notes, size: 18, color: Colors.amber),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Notas: $notas',
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                Text(
+                  'Citas Veterinarias',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF16302D),
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  'Agenda y organiza las consultas de tus mascotas.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF5C7A77),
                   ),
                 ),
               ],
@@ -453,11 +371,166 @@ class _CitasVeterinariasPageState extends State<CitasVeterinariasPage> {
       ),
     );
   }
-}
 
-class _Paleta {
-  static const primarioOscuro = Color(0xFF1F7A70);
-  static const verdeMuyClaro = Color(0xFFD1F0EE);
-  static const tinta = Color(0xFF16302D);
-  static const tintaSuave = Color(0xFF5C7A77);
+  @override
+  Widget build(BuildContext context) {
+    final citasOrdenadas = [..._citas]
+      ..sort((a, b) {
+        final fechaA = DateTime(
+          a.fecha.year,
+          a.fecha.month,
+          a.fecha.day,
+        );
+        final fechaB = DateTime(
+          b.fecha.year,
+          b.fecha.month,
+          b.fecha.day,
+        );
+
+        final comparacion = fechaA.compareTo(fechaB);
+
+        if (comparacion != 0) return comparacion;
+
+        return a.hora.compareTo(b.hora);
+      });
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFE2F4F1),
+      appBar: const HeaderAppBar(
+        titulo: 'Citas',
+        mostrarRegreso: true,
+        mostrarLogo: true,
+        mostrarNotificaciones: true,
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _cargarCitas,
+          child: ListView(
+            padding: const EdgeInsets.all(18),
+            children: [
+              _encabezado(),
+              const SizedBox(height: 22),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Mis citas veterinarias',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF16302D),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _cargarCitas,
+                    tooltip: 'Actualizar',
+                    icon: const Icon(Icons.refresh),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _abrirModal(),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Registrar nueva cita'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFA8E6CF),
+                    foregroundColor: const Color(0xFF16302D),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              if (_cargando)
+                const Padding(
+                  padding: EdgeInsets.all(30),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (_error != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.cloud_off,
+                          color: Colors.red,
+                          size: 36,
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'No se pudieron cargar las citas.',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _cargarCitas,
+                          child: const Text('Intentar nuevamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (citasOrdenadas.isEmpty)
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.event_available,
+                          size: 45,
+                          color: Color(0xFF00695C),
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'Todavía no tienes citas registradas.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ...citasOrdenadas.map(_tarjetaCita),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 1,
+        onItemSelected: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushNamed(context, AppRoutes.home);
+              break;
+            case 1:
+              Navigator.pushNamed(context, AppRoutes.menu);
+              break;
+            case 2:
+              Navigator.pushNamed(context, AppRoutes.pets);
+              break;
+            case 3:
+              Navigator.pushNamed(context, AppRoutes.perfil);
+              break;
+          }
+        },
+      ),
+    );
+  }
 }

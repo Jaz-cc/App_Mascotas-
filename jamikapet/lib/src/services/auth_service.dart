@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:jamikapet/src/models/usuario.dart';
 import 'package:jamikapet/src/core/network/api_config.dart';
 
@@ -16,7 +17,7 @@ class AuthException implements Exception {
 
 class AuthService {
   final uri = Uri.parse('${ApiConfig.baseUrl}/auth');
-  static const Duration _timeout = Duration(seconds: 15);
+  static const Duration _timeout = ApiConfig.timeout;
 
   // REGISTRO DE USUARIO
   Future<Usuario> registrarUsuario({
@@ -80,12 +81,37 @@ class AuthService {
       return usuario;
     } on AuthException {
       rethrow;
-    } on SocketException {
-      throw const AuthException('No hay conexión con el servidor.');
-    } on TimeoutException {
-      throw const AuthException('El servidor tardó demasiado en responder.');
-    } on FormatException {
-      throw const AuthException('El servidor devolvió una respuesta inválida.');
+    } on SocketException catch (e) {
+      debugPrint('Error de conexión: $e');
+      throw const AuthException(
+        'No hay conexión con el servidor.',
+      );
+    } on TimeoutException catch (e) {
+      debugPrint('Tiempo de espera agotado: $e');
+      throw const AuthException(
+        'El servidor tardó demasiado en responder.',
+      );
+    } on FormatException catch (e) {
+      debugPrint('Respuesta inválida: $e');
+      throw const AuthException(
+        'El servidor devolvió una respuesta inválida.',
+      );
+    } on http.ClientException catch (e) {
+      debugPrint('Error HTTP: $e');
+      throw const AuthException(
+        'No se pudo establecer la comunicación con el servidor.',
+      );
+    } on IOException catch (e) {
+      debugPrint('Error de entrada/salida: $e');
+      throw const AuthException(
+        'No se pudo establecer una conexión con el servidor.',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Error inesperado: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      throw const AuthException(
+        'Ocurrió un error inesperado al comunicarse con el servidor.',
+      );
     }
   }
 
@@ -137,17 +163,36 @@ class AuthService {
       return Map<String, dynamic>.from(data);
     } on AuthException {
       rethrow;
-    } on SocketException {
+    } on SocketException catch (e) {
+      debugPrint('Error de conexión: $e');
       throw const AuthException(
         'No hay conexión con el servidor.',
       );
-    } on TimeoutException {
+    } on TimeoutException catch (e) {
+      debugPrint('Tiempo de espera agotado: $e');
       throw const AuthException(
         'El servidor tardó demasiado en responder.',
       );
-    } on FormatException {
+    } on FormatException catch (e) {
+      debugPrint('Respuesta inválida: $e');
       throw const AuthException(
         'El servidor devolvió una respuesta inválida.',
+      );
+    } on http.ClientException catch (e) {
+      debugPrint('Error HTTP: $e');
+      throw const AuthException(
+        'No se pudo establecer la comunicación con el servidor.',
+      );
+    } on IOException catch (e) {
+      debugPrint('Error de entrada/salida: $e');
+      throw const AuthException(
+        'No se pudo establecer una conexión con el servidor.',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Error inesperado: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      throw const AuthException(
+        'Ocurrió un error inesperado al comunicarse con el servidor.',
       );
     }
   }
