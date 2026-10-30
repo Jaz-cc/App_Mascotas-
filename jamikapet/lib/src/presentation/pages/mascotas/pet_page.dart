@@ -156,7 +156,10 @@ class _PetPageState extends State<PetPage> {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
         itemCount: _mascotas.length,
         separatorBuilder: (_, _) => const SizedBox(height: 14),
-        itemBuilder: (_, i) => _TarjetaMascota(mascota: _mascotas[i]),
+        itemBuilder: (_, i) => _TarjetaMascota(
+          mascota: _mascotas[i],
+          onRegresar: _cargarMascotas,
+        ),
       ),
     );
   }
@@ -217,8 +220,9 @@ class _PetPageState extends State<PetPage> {
 
 class _TarjetaMascota extends StatelessWidget {
   final Mascota mascota;
+  final Future<void> Function() onRegresar;
 
-  const _TarjetaMascota({required this.mascota});
+  const _TarjetaMascota({required this.mascota, required this.onRegresar,});
 
   @override
   Widget build(BuildContext context) {
@@ -227,12 +231,15 @@ class _TarjetaMascota extends StatelessWidget {
         mascota.especie.toLowerCase() == 'gato' ? '🐱' : '🐶';
 
     return InkWell(
-      onTap: () {
-        Navigator.pushNamed(
+      onTap: () async{
+        final resultado = await Navigator.pushNamed(
           context,
           AppRoutes.petProfile,
           arguments: mascota.id,
         );
+        if (resultado == true){
+          await onRegresar();
+        }
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(
