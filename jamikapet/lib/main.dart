@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 
 
@@ -14,6 +15,20 @@ class JamikaPetApp extends StatelessWidget {
     return MaterialApp(
       title: 'JAMIKA PET',
       debugShowCheckedModeBanner: false,
+
+      // Configuración de idioma
+      locale: const Locale('es', 'MX'),
+
+      supportedLocales: const [
+        Locale('es', 'MX'),
+        Locale('en', 'US'),
+      ],
+
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
 
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
