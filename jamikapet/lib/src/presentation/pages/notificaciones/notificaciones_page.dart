@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jamikapet/src/models/notificacion.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/services/notification_service.dart';
+// PASO 4 NOTIFICACIONES CLOUDE
 
 class NotificacionesPage extends StatefulWidget {
   const NotificacionesPage({super.key});

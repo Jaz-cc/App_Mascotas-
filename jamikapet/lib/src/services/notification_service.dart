@@ -2,36 +2,50 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:jamikapet/src/core/network/api_config.dart';
 import 'package:jamikapet/src/models/notificacion.dart';
+import 'package:jamikapet/src/core/storage/token_storage.dart';
+
+class NotificacionException implements Exception {
+  final String mensaje;
+
+  const NotificacionException(this.mensaje);
+
+  @override
+  String toString() => mensaje;
+}
 
 class NotificacionService {
-  static const String baseUrl =
-      'http://10.0.2.2:3000/api';
-
   final String? token;
 
   NotificacionService({this.token});
 
-  Map<String, String> get _headers {
+  Future<Map<String, String>> _headers() async {
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
 
-    if (token != null && token!.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
+    final tokenGuardado = token ?? await TokenStorage.getToken();
+
+    if (tokenGuardado != null && tokenGuardado.isNotEmpty) {
+      final tokenLimpio = tokenGuardado.replaceFirst(
+        RegExp(r'^Bearer\s+', caseSensitive: false),
+        '',
+      );
+
+      headers['Authorization'] = 'Bearer $tokenLimpio';
     }
 
     return headers;
   }
 
-  /// Obtiene las notificaciones del usuario autenticado.
   Future<List<Notificacion>> obtenerNotificaciones() async {
     try {
       final response = await http
           .get(
-            Uri.parse('$baseUrl/notificaciones'),
-            headers: _headers,
+            Uri.parse('${ApiConfig.baseUrl}/notificaciones'),
+            headers: await _headers(),
           )
           .timeout(const Duration(seconds: 20));
 
@@ -46,34 +60,97 @@ class NotificacionService {
               : [];
 
       if (datos is! List) {
-        throw NotificacionException(
+        throw const NotificacionException(
           'El servidor devolvió un formato de notificaciones inválido.',
         );
       }
 
-      return datos.map((item) {
-        return Notificacion.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        );
-      }).toList();
+      return datos
+          .map(
+            (item) => Notificacion.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
     } on SocketException {
-      throw NotificacionException(
+      throw const NotificacionException(
         'No se pudo conectar con el servidor.',
       );
     } on TimeoutException {
-      throw NotificacionException(
+      throw const NotificacionException(
         'El servidor tardó demasiado en responder.',
       );
     } on FormatException {
-      throw NotificacionException(
+      throw const NotificacionException(
         'La respuesta del servidor no es válida.',
       );
     }
   }
 
-  /// Cambia el estado de una notificación.
-  ///
-  /// Ruta propuesta: PATCH /api/notificaciones/:id
+  /// El backend actual solo permite marcar una notificación como leída.
+  Future<void> marcarLeida(int id) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse('${ApiConfig.baseUrl}/notificaciones/$id/leida'),
+            headers: await _headers(),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      _validarRespuesta(response);
+    } on SocketException {
+      throw const NotificacionException(
+        'No se pudo conectar con el servidor.',
+      );
+    } on TimeoutException {
+      throw const NotificacionException(
+        'El servidor tardó demasiado en responder.',
+      );
+    }
+  }
+
+  Future<void> marcarTodasLeidas() async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse('${ApiConfig.baseUrl}/notificaciones/leidas'),
+            headers: await _headers(),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      _validarRespuesta(response);
+    } on SocketException {
+      throw const NotificacionException(
+        'No se pudo conectar con el servidor.',
+      );
+    } on TimeoutException {
+      throw const NotificacionException(
+        'El servidor tardó demasiado en responder.',
+      );
+    }
+  }
+
+  Future<void> eliminarNotificacion(int id) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('${ApiConfig.baseUrl}/notificaciones/$id'),
+            headers: await _headers(),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      _validarRespuesta(response);
+    } on SocketException {
+      throw const NotificacionException(
+        'No se pudo conectar con el servidor.',
+      );
+    } on TimeoutException {
+      throw const NotificacionException(
+        'El servidor tardó demasiado en responder.',
+      );
+    }
+  }
+
   Future<Notificacion> actualizarEstado({
     required int id,
     required bool atendida,
@@ -81,9 +158,13 @@ class NotificacionService {
     try {
       final response = await http
           .patch(
-            Uri.parse('$baseUrl/notificaciones/$id'),
-            headers: _headers,
-            body: jsonEncode({'atendida': atendida}),
+            Uri.parse(
+              '${ApiConfig.baseUrl}/notificaciones/$id/atendida',
+            ),
+            headers: await _headers(),
+            body: jsonEncode({
+              'atendida': atendida,
+            }),
           )
           .timeout(const Duration(seconds: 20));
 
@@ -92,11 +173,13 @@ class NotificacionService {
       final dynamic decoded = jsonDecode(response.body);
 
       final dynamic datos = decoded is Map
-          ? decoded['data'] ?? decoded['notificacion'] ?? decoded
+          ? decoded['data'] ??
+              decoded['notificacion'] ??
+              decoded
           : decoded;
 
       if (datos is! Map) {
-        throw NotificacionException(
+        throw const NotificacionException(
           'No se pudo actualizar la notificación.',
         );
       }
@@ -105,47 +188,22 @@ class NotificacionService {
         Map<String, dynamic>.from(datos),
       );
     } on SocketException {
-      throw NotificacionException(
+      throw const NotificacionException(
         'No se pudo conectar con el servidor.',
       );
     } on TimeoutException {
-      throw NotificacionException(
+      throw const NotificacionException(
         'El servidor tardó demasiado en responder.',
       );
     } on FormatException {
-      throw NotificacionException(
+      throw const NotificacionException(
         'La respuesta del servidor no es válida.',
       );
     }
   }
-
-  /// Elimina una notificación.
-  ///
-  /// Ruta propuesta: DELETE /api/notificaciones/:id
-  Future<void> eliminarNotificacion(int id) async {
-    try {
-      final response = await http
-          .delete(
-            Uri.parse('$baseUrl/notificaciones/$id'),
-            headers: _headers,
-          )
-          .timeout(const Duration(seconds: 20));
-
-      _validarRespuesta(response);
-    } on SocketException {
-      throw NotificacionException(
-        'No se pudo conectar con el servidor.',
-      );
-    } on TimeoutException {
-      throw NotificacionException(
-        'El servidor tardó demasiado en responder.',
-      );
-    }
-  }
-
+  
   void _validarRespuesta(http.Response response) {
-    if (response.statusCode >= 200 &&
-        response.statusCode < 300) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
 
@@ -163,9 +221,7 @@ class NotificacionService {
           mensaje = detalle.toString();
         }
       }
-    } catch (_) {
-      // Se utiliza el mensaje predeterminado.
-    }
+    } catch (_) {}
 
     if (response.statusCode == 401) {
       mensaje = 'Tu sesión ha expirado. Inicia sesión nuevamente.';
@@ -179,13 +235,4 @@ class NotificacionService {
 
     throw NotificacionException(mensaje);
   }
-}
-
-class NotificacionException implements Exception {
-  final String mensaje;
-
-  const NotificacionException(this.mensaje);
-
-  @override
-  String toString() => mensaje;
 }

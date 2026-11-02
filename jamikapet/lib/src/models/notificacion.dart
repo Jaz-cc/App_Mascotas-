@@ -1,50 +1,34 @@
 enum TipoNotificacion {
-  vacuna,
-  medicamento,
-  cita,
-  desparasitacion,
-  anomalia;
+  vacuna('vacuna'),
+  medicamento('medicamento'),
+  cita('cita'),
+  desparasitacion('desparasitacion'),
+  anomalia('anomalia');
 
-  String get valorApi {
-    switch (this) {
-      case TipoNotificacion.vacuna:
-        return 'vacuna';
-      case TipoNotificacion.medicamento:
-        return 'medicamento';
-      case TipoNotificacion.cita:
-        return 'cita';
-      case TipoNotificacion.desparasitacion:
-        return 'desparasitacion';
-      case TipoNotificacion.anomalia:
-        return 'anomalia';
-    }
-  }
+  final String valorApi;
+  const TipoNotificacion(this.valorApi);
 
-  static TipoNotificacion desdeTexto(String? valor) {
-    switch ((valor ?? '').toLowerCase().trim()) {
-      case 'vacuna':
-        return TipoNotificacion.vacuna;
-      case 'medicamento':
-        return TipoNotificacion.medicamento;
-      case 'cita':
-        return TipoNotificacion.cita;
-      case 'desparasitacion':
-      case 'desparasitación':
-        return TipoNotificacion.desparasitacion;
-      case 'anomalia':
-      case 'anomalía':
-        return TipoNotificacion.anomalia;
-      default:
-        return TipoNotificacion.anomalia;
+  /// Convierte el texto del backend en enum, tolerando mayúsculas y tildes.
+  static TipoNotificacion desdeTexto(String? texto) {
+    final normalizado = (texto ?? '')
+        .toLowerCase()
+        .trim()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u');
+
+    for (final tipo in TipoNotificacion.values) {
+      if (tipo.valorApi == normalizado) return tipo;
     }
+
+    // Valor por defecto si el backend envía algo desconocido.
+    return TipoNotificacion.cita;
   }
 }
 
-enum FiltroNotificacion {
-  todas,
-  pendientes,
-  atendidas,
-}
+enum FiltroNotificacion { todas, pendientes, atendidas }
 
 class Notificacion {
   final int id;
@@ -74,8 +58,12 @@ class Notificacion {
   factory Notificacion.fromJson(Map<String, dynamic> json) {
     final mascotaJson = json['mascota'];
 
+    // El backend utiliza nombrePet en la entidad Pet.
     final String nombreMascota = mascotaJson is Map
-        ? (mascotaJson['nombre'] ?? '').toString()
+        ? (mascotaJson['nombrePet'] ??
+                mascotaJson['nombre'] ??
+                '')
+            .toString()
         : (json['nombreMascota'] ??
                 json['nombre_mascota'] ??
                 (mascotaJson is String ? mascotaJson : ''))
@@ -88,37 +76,42 @@ class Notificacion {
     return Notificacion(
       id: _leerInt(json['id']),
       mascotaId: _leerNullableInt(
-        json['mascotaId'] ?? json['mascota_id'],
+        json['mascotaId'] ??
+            json['mascota_id'] ??
+            (mascotaJson is Map ? mascotaJson['id'] : null),
       ),
       titulo: (json['titulo'] ?? '').toString(),
-      descripcion: (json['descripcion'] ?? '').toString(),
-      mascota: nombreMascota,
+      descripcion: (json['mensaje'] ??
+              json['descripcion'] ??
+              '')
+          .toString(),
+      mascota: nombreMascota.isEmpty ? 'Sin mascota' : nombreMascota,
       fechaProgramada: _leerFecha(fechaValor),
       fecha: _formatearFecha(fechaValor),
       tipo: TipoNotificacion.desdeTexto(
-        (json['tipo'] ?? json['tipoNotificacion'] ?? json['tipo_notificacion'])
+        (json['tipo'] ??
+                json['tipoNotificacion'] ??
+                json['tipo_notificacion'])
             ?.toString(),
       ),
       creadaEn: _leerFecha(
-        json['creadaEn'] ?? json['creada_en'] ?? json['createdAt'],
+        json['created_at'] ??
+            json['createdAt'] ??
+            json['creadaEn'] ??
+            json['creada_en'],
       ),
-      atendida: _leerBooleano(
-        json['atendida'] ?? json['leida'] ?? json['leída'],
-      ),
+      atendida: _leerBooleano(json['atendida']),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'mascotaId': mascotaId,
-      'titulo': titulo,
-      'descripcion': descripcion,
-      'tipo': tipo.valorApi,
-      'fechaProgramada': fechaProgramada?.toIso8601String(),
-      'atendida': atendida,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'mascotaId': mascotaId,
+    'titulo': titulo,
+    'mensaje': descripcion,
+    'tipo': tipo.valorApi,
+    'fecha_programada': fechaProgramada?.toIso8601String(),
+    'atendida': atendida,
+  };
 
   static int _leerInt(dynamic valor) {
     if (valor is num) return valor.toInt();
