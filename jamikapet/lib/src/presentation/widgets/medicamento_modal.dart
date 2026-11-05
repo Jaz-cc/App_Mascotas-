@@ -308,7 +308,7 @@ class MedicamentoModal {
                             const SizedBox(height: 14),
 
                             DropdownButtonFormField<String>(
-                              value: frecuenciaSeleccionada,
+                              initialValue: frecuenciaSeleccionada,
                               isExpanded: true,
                               decoration: _decoracion(
                                 'Frecuencia de administración',

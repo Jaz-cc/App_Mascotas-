@@ -167,7 +167,7 @@ Future<void> _editarMascota(Mascota mascota) async {
                     const SizedBox(height: 12),
 
                     DropdownButtonFormField<String>(
-                      value: especie,
+                      initialValue: especie,
                       decoration: const InputDecoration(
                         labelText: 'Tipo de mascota',
                         prefixIcon: Icon(Icons.category_outlined),
@@ -200,7 +200,7 @@ Future<void> _editarMascota(Mascota mascota) async {
                     const SizedBox(height: 12),
 
                     DropdownButtonFormField<String>(
-                      value: sexo,
+                      initialValue: sexo,
                       decoration: const InputDecoration(
                         labelText: 'Sexo',
                         prefixIcon: Icon(Icons.wc),
