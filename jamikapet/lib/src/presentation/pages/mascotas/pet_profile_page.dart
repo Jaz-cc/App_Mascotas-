@@ -110,6 +110,292 @@ class _PetProfilePageState extends State<PetProfilePage> {
     );
   }
 
+Future<void> _editarMascota(Mascota mascota) async {
+  final formKey = GlobalKey<FormState>();
+
+  final nombreController =
+      TextEditingController(text: mascota.nombrePet);
+  final razaController =
+      TextEditingController(text: mascota.raza);
+  final edadController =
+      TextEditingController(text: mascota.edad.toString());
+  final pesoController =
+      TextEditingController(text: mascota.peso.toString());
+
+  String especie = mascota.especie.toLowerCase() == 'gato'
+      ? 'Gato'
+      : 'Perro';
+
+  String sexo = mascota.sexo.toLowerCase() == 'hembra'
+      ? 'Hembra'
+      : 'Macho';
+
+  final datos = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, actualizarDialogo) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            title: const Text(
+              'Editar mascota',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: _Paleta.tinta,
+              ),
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nombreController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre',
+                        prefixIcon: Icon(Icons.pets),
+                      ),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty
+                              ? 'Escribe el nombre'
+                              : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: especie,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de mascota',
+                        prefixIcon: Icon(Icons.category_outlined),
+                      ),
+                      items: ['Perro', 'Gato']
+                          .map((e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(e),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          actualizarDialogo(() => especie = v);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextFormField(
+                      controller: razaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Raza',
+                        prefixIcon: Icon(Icons.pets_outlined),
+                      ),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty
+                              ? 'Escribe la raza'
+                              : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: sexo,
+                      decoration: const InputDecoration(
+                        labelText: 'Sexo',
+                        prefixIcon: Icon(Icons.wc),
+                      ),
+                      items: ['Macho', 'Hembra']
+                          .map((e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(e),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          actualizarDialogo(() => sexo = v);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextFormField(
+                      controller: edadController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Edad',
+                        suffixText: 'años',
+                        prefixIcon: Icon(Icons.cake_outlined),
+                      ),
+                      validator: (v) {
+                        final edad = int.tryParse(v ?? '');
+                        if (edad == null || edad < 0) {
+                          return 'Edad no válida';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextFormField(
+                      controller: pesoController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Peso',
+                        suffixText: 'kg',
+                        prefixIcon:
+                            Icon(Icons.monitor_weight_outlined),
+                      ),
+                      validator: (v) {
+                        final peso = double.tryParse(
+                          (v ?? '').replaceAll(',', '.'),
+                        );
+                        if (peso == null || peso <= 0) {
+                          return 'Peso no válido';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _Paleta.primarioOscuro,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () {
+                  if (!formKey.currentState!.validate()) return;
+
+                  Navigator.pop(dialogContext, {
+                    'nombre': nombreController.text.trim(),
+                    'especie': especie,
+                    'raza': razaController.text.trim(),
+                    'sexo': sexo,
+                    'edad': int.parse(edadController.text),
+                    'peso': double.parse(
+                      pesoController.text.replaceAll(',', '.'),
+                    ),
+                  });
+                },
+                child: const Text('Guardar cambios'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  nombreController.dispose();
+  razaController.dispose();
+  edadController.dispose();
+  pesoController.dispose();
+
+  if (datos == null || !mounted) return;
+
+  try {
+    await PetsService.actualizarMascota(
+      id: mascota.id,
+      nombre: datos['nombre'],
+      especie: datos['especie'],
+      raza: datos['raza'],
+      sexo: datos['sexo'],
+      edad: datos['edad'],
+      peso: datos['peso'],
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _mascotaFuture = _cargarMascota();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Información actualizada correctamente 🐾'),
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al actualizar: $e')),
+    );
+  }
+}
+
+
+Future<void> _eliminarMascota(Mascota mascota) async {
+  final confirmar = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
+      title: const Text(
+        '¿Eliminar mascota?',
+        style: TextStyle(
+          fontWeight: FontWeight.w800,
+          color: _Paleta.tinta,
+        ),
+      ),
+      content: Text(
+        '¿Estás segura de que deseas eliminar a ${mascota.nombrePet}? '
+        'Esta acción no se puede deshacer.',
+        style: const TextStyle(color: _Paleta.tintaSuave),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red.shade600,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: const Text('Eliminar'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmar != true || !mounted) return;
+
+  try {
+    await PetsService.eliminarMascota(id: mascota.id);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Mascota eliminada correctamente 🐾'),
+      ),
+    );
+
+    Navigator.pop(context, true);
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al eliminar: $e')),
+    );
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Mascota>(
@@ -354,14 +640,63 @@ class _PetProfilePageState extends State<PetProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Información general",
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: _Paleta.tinta,
-            ),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Información general',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: _Paleta.tinta,
+                  ),
+                ),
+              ),
+
+              PopupMenuButton<String>(
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: _Paleta.primarioOscuro,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                onSelected: (opcion) {
+                  if (opcion == 'editar') {
+                    _editarMascota(mascota);
+                  } else if (opcion == 'eliminar') {
+                    _eliminarMascota(mascota);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'editar',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, color: _Paleta.primarioOscuro),
+                        SizedBox(width: 10),
+                        Text('Editar información'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'eliminar',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text(
+                          'Eliminar mascota',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
+
 
           const SizedBox(height: 14),
 
