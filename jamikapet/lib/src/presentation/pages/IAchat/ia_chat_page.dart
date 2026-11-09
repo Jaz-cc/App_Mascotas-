@@ -1,9 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/services/ai_service.dart';
-
 
 class ChatIaPage extends StatefulWidget {
   const ChatIaPage({super.key});
@@ -16,8 +17,13 @@ class _ChatIaPageState extends State<ChatIaPage> {
 
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _picker = ImagePicker();
+
+ 
 
   bool _isTyping = false;
+  Uint8List? _selectedImageBytes;
+  String _selectedImageMime = 'image/jpeg';
 
   final List<Map<String, dynamic>> _messages = [
     {
@@ -25,6 +31,7 @@ class _ChatIaPageState extends State<ChatIaPage> {
       'text':
           '¡Hola! 🐾 Soy Jamika AI, tu asistente de orientación sobre mascotas. ¿En qué puedo ayudarte hoy?',
       'time': '10:00 AM',
+      'imageBytes': null,
     },
   ];
 
@@ -42,10 +49,47 @@ class _ChatIaPageState extends State<ChatIaPage> {
     super.dispose();
   }
 
-  // Envía un mensaje y simula una respuesta del asistente.
+  String _mimeDesdeNombre(String nombre) {
+    final n = nombre.toLowerCase();
+    if (n.endsWith('.png')) return 'image/png';    
+    if (n.endsWith('.jpg')) return 'image/jpg';
+    if (n.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
+  }
+
+  // Selecciona la foto 
+  Future<void> _seleccionarImagen() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1024,
+      );
+
+      if (image != null) {
+        final Uint8List bytes = await image.readAsBytes();
+        setState(() {
+          _selectedImageBytes = bytes;
+          _selectedImageMime = image.mimeType ?? _mimeDesdeNombre(image.name);
+        });
+      }
+
+    } catch (e) {
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al seleccionar imagen: $e')),
+      );
+
+    }
+  }
+
   Future<void> _sendMessage(String text) async {
+    final String mimeImagen = _selectedImageMime;   // <-- nuevo    
     final String mensaje = text.trim();
-    if (mensaje.isEmpty || _isTyping) return;
+    final Uint8List? bytesImagen = _selectedImageBytes;
+
+    if ((mensaje.isEmpty && bytesImagen == null) || _isTyping) return;
 
     final String timeNow = TimeOfDay.now().format(context);
 
@@ -53,26 +97,34 @@ class _ChatIaPageState extends State<ChatIaPage> {
       _sugerencias.removeWhere((sugerencia) => sugerencia == mensaje);
       _messages.add({
         'isUser': true,
-        'text': mensaje,
+        'text': mensaje.isNotEmpty ? mensaje : '📷 [Fotografía adjuntada]',
         'time': timeNow,
+        'imageBytes': bytesImagen,
       });
       _isTyping = true;
+      _selectedImageBytes = null;
     });
 
     _textController.clear();
     _scrollToBottom();
 
     try {
-      // PETICIÓN IA SERVICE
-      final respuestaIa = await IaService.enviarConsulta(mensaje);
+      final String respuestaIa = bytesImagen != null
+          ? await IaService.enviarConsultaConImagen(
+              imageBytes: bytesImagen,
+              mimeType: mimeImagen,
+              prompt: mensaje,
+            )
+          : await IaService.enviarConsulta(mensaje);
 
       if (!mounted) return;
 
       setState(() {
         _messages.add({
           'isUser': false,
-          'text': respuestaIa,
+          'text': respuestaIa, // <-- aquí se usa la variable
           'time': TimeOfDay.now().format(context),
+          'imageBytes': null,
         });
         _isTyping = false;
       });
@@ -82,8 +134,10 @@ class _ChatIaPageState extends State<ChatIaPage> {
       setState(() {
         _messages.add({
           'isUser': false,
-          'text': '⚠️ Error al conectar con la IA: ${e.toString().replaceAll("Exception: ", "")}',
+          'text':
+              '⚠️ Error al conectar con la IA: ${e.toString().replaceAll("Exception: ", "")}',
           'time': TimeOfDay.now().format(context),
+          'imageBytes': null,
         });
         _isTyping = false;
       });
@@ -110,16 +164,16 @@ class _ChatIaPageState extends State<ChatIaPage> {
 
     return Scaffold(
       backgroundColor: primaryMint,
-      // Encabezado de la pantalla.
       appBar: const HeaderAppBar(
         titulo: 'JAMIKA IA',
-        subtitulo: 'Asistente IA - 🟢 En Linea',
+        subtitulo: 'Asistente Virtual',
         mostrarLogo: true,
         mostrarRegreso: true,
         icon: Icons.smart_toy_outlined,
       ),
       body: Column(
         children: [
+          // AVISO INFORMATIVO
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: const Color(0xFFFFF3CD),
@@ -136,6 +190,7 @@ class _ChatIaPageState extends State<ChatIaPage> {
               ],
             ),
           ),
+        // LISTA DE MENSAJES
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -144,6 +199,7 @@ class _ChatIaPageState extends State<ChatIaPage> {
               itemBuilder: (context, index) {
                 final Map<String, dynamic> msg = _messages[index];
                 final bool isUser = msg['isUser'] as bool;
+                final Uint8List? imageBytes = msg['imageBytes'] as Uint8List?;
 
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -171,8 +227,21 @@ class _ChatIaPageState extends State<ChatIaPage> {
                       ],
                     ),
                     child: Column(
-                      crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
+                        if (imageBytes != null) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              imageBytes,
+                              height: 180,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         Text(
                           msg['text'] as String,
                           style: TextStyle(
@@ -196,6 +265,7 @@ class _ChatIaPageState extends State<ChatIaPage> {
               },
             ),
           ),
+          // INDICADOR DE PROCESAMIENTO
           if (_isTyping)
             Padding(
               padding: const EdgeInsets.only(left: 16, bottom: 8),
@@ -211,12 +281,13 @@ class _ChatIaPageState extends State<ChatIaPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Jamika AI está consultando al servidor...',
+                    'Jamika AI está analizando tu consulta...',
                     style: TextStyle(fontSize: 12, color: Colors.teal.shade800),
                   ),
                 ],
               ),
             ),
+          // PREGUNTAS SUGERIDAS
           if (_sugerencias.isNotEmpty) ...[
             SizedBox(
               height: 40,
@@ -244,6 +315,40 @@ class _ChatIaPageState extends State<ChatIaPage> {
             ),
             const SizedBox(height: 8),
           ],
+          // VISTA PREVIA DE LA FOTOGRAFÍA
+          if (_selectedImageBytes != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: const Color(0xFFD1F0EE),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      _selectedImageBytes!,
+                      width: 45,
+                      height: 45,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Foto de tu mascota adjuntada',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F7A70),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.redAccent),
+                    onPressed: () => setState(() => _selectedImageBytes = null),
+                  ),
+                ],
+              ),
+            ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: const BoxDecoration(
@@ -252,12 +357,23 @@ class _ChatIaPageState extends State<ChatIaPage> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  tooltip: 'Adjuntar foto de mascota',
+                  icon: const Icon(
+                    Icons.add_a_photo_outlined,
+                    color: Color(0xFF1F7A70),
+                    size: 24,
+                  ),
+                  onPressed: _isTyping ? null : _seleccionarImagen,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _textController,
                     enabled: !_isTyping,
                     decoration: InputDecoration(
-                      hintText: 'Escribe tu consulta sobre mascotas...',
+                      hintText: _selectedImageBytes != null
+                          ? 'Añade un comentario sobre la foto...'
+                          : 'Escribe tu consulta sobre mascotas...',
                       hintStyle: const TextStyle(fontSize: 14, color: Colors.black45),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
@@ -265,7 +381,10 @@ class _ChatIaPageState extends State<ChatIaPage> {
                       ),
                       fillColor: const Color(0xFFE2F4F1),
                       filled: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
                     ),
                     onSubmitted: _sendMessage,
                   ),
@@ -276,7 +395,8 @@ class _ChatIaPageState extends State<ChatIaPage> {
                   child: IconButton(
                     tooltip: 'Enviar mensaje',
                     icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                    onPressed: _isTyping ? null : () => _sendMessage(_textController.text),
+                    onPressed:
+                        _isTyping ? null : () => _sendMessage(_textController.text),
                   ),
                 ),
               ],

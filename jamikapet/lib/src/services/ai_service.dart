@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:typed_data';
+import 'package:http_parser/http_parser.dart';
 import 'package:jamikapet/src/core/network/api_config.dart';
 import 'package:jamikapet/src/core/storage/token_storage.dart';
 
@@ -65,6 +67,43 @@ class IaService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       return data['reply'] ?? data['mensaje'] ?? data['response'] ?? 'Sin respuesta';
+    }
+
+    throw _errorRespuesta(response);
+  }
+
+  // ENVIAR CONSULTA CON IMAGEN
+  static Future<String> enviarConsultaConImagen({
+    required Uint8List imageBytes,
+    required String mimeType,
+    String prompt = '',
+  }) async {
+    final headers = await _obtenerHeaders();
+    // En multipart NO se define Content-Type manualmente:
+    // http lo genera con el boundary correcto.
+    headers.remove('Content-Type');
+
+    final extension = mimeType.split('/').last; // jpeg, png, webp
+
+    final request = http.MultipartRequest('POST', _url('/chat/image'))
+      ..headers.addAll(headers)
+      ..fields['prompt'] = prompt
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'image', // debe coincidir con FileInterceptor('image')
+          imageBytes,
+          filename: 'mascota.$extension',
+          contentType: MediaType.parse(mimeType),
+        ),
+      );
+
+    // El backend tiene hasta 60s para imágenes, así que damos más margen
+    final streamed = await request.send().timeout(const Duration(seconds: 180));
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return data['reply'] ?? 'Sin respuesta';
     }
 
     throw _errorRespuesta(response);
