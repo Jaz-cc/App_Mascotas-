@@ -195,11 +195,10 @@ class UsersService {
         streamedResponse,
       );
 
-      if (response.statusCode != 200 &&
-          response.statusCode != 201) {
+      if (response.statusCode != 200 && response.statusCode != 201) {
         throw UsersServiceException(
           _mensajeError(
-            response,
+            _decodificar(response), // 👈 antes: response
             'No se pudo subir la imagen a Cloudinary.',
           ),
         );
@@ -234,8 +233,8 @@ class UsersService {
   }
 
   // ============================================================
-  // ACTUALIZAR USUARIO
-  // ============================================================
+// ACTUALIZAR USUARIO
+// ============================================================
   static Future<Map<String, dynamic>> actualizarUsuario({
     required int id,
     required String nombre,
@@ -243,6 +242,7 @@ class UsersService {
     required String email,
     required String phone,
     XFile? nuevaImagen,
+    String? imagenUrl, // 👈 nuevo
   }) async {
     final headers = await _obtenerHeaders();
 
@@ -253,11 +253,11 @@ class UsersService {
       'phone': phone,
     };
 
-    // Primero se sube la foto y se agrega su URL al DTO.
+    // Si llega un archivo, se sube; si ya llega la URL, se usa directo.
     if (nuevaImagen != null) {
-      body['image'] = await subirImagenUsuario(
-        imagen: nuevaImagen,
-      );
+      body['image'] = await subirImagenUsuario(imagen: nuevaImagen);
+    } else if (imagenUrl != null) {
+      body['image'] = imagenUrl;
     }
 
     final baseUrl = ApiConfig.baseUrl.replaceFirst(
@@ -289,8 +289,8 @@ class UsersService {
 
       throw UsersServiceException(
         _mensajeError(
-          response,
-          'No se pudo actualizar la mascota.',
+          _decodificar(response), // 👈 antes pasabas `response`
+          'No se pudo actualizar el usuario.', // 👈 antes decía "mascota"
         ),
       );
     } on TimeoutException {
@@ -303,7 +303,7 @@ class UsersService {
       );
     }
   }
-
+  
   // ============================================================
   // PETICIÓN HTTP CON MANEJO DE ERRORES DE CONEXIÓN
   // ============================================================
