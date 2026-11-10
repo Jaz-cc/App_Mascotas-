@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:jamikapet/src/models/notificacion.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
@@ -18,11 +20,39 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
   final Set<int> _procesando = {};
   bool _cargando = true;
   String? _error;
+  Timer? _actualizador;
 
   @override
   void initState() {
     super.initState();
     _cargarNotificaciones();
+
+    // Revisa cada minuto si ya llegó la hora de algún recordatorio.
+    _actualizador = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _refrescarEnSilencio(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _actualizador?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refrescarEnSilencio() async {
+    if (_cargando || _procesando.isNotEmpty) return;
+
+    try {
+      final notificaciones = await _service.obtenerNotificaciones();
+      if (!mounted) return;
+      setState(() {
+        _notificaciones = notificaciones;
+        _error = null;
+      });
+    } catch (_) {
+      // Si falla, se intenta de nuevo en el siguiente minuto.
+    }
   }
 
   Future<void> _cargarNotificaciones() async {
