@@ -290,9 +290,12 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
   }
 
   // ---------------- REGISTRAR TOMA ----------------
-  void _mostrarModalRegistrarToma(String medicamentoNombre, String dosis) {
+  void _mostrarModalRegistrarToma(Medicamento med) {
+    final medicamentoNombre = med.nombre;
+    final dosis = med.dosis;
     final notasController = TextEditingController();
     TimeOfDay horaSeleccionada = TimeOfDay.now();
+    bool guardando = false;
 
     showModalBottomSheet(
       context: context,
@@ -411,19 +414,57 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                           side: const BorderSide(color: Color(0xFF81C784)),
                         ),
                       ),
-                      onPressed: () {
-                        // Guardar la toma en el backend
-                        Navigator.pop(sheetContext);
-                        _snack(
-                          '¡Toma de $medicamentoNombre registrada con éxito!',
-                          color: _Paleta.primarioOscuro,
-                        );
-                      },
-                      child: const Text(
-                        'Confirmar Toma',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      onPressed: guardando || med.id == null
+                          ? null
+                          : () async {
+                              setModalState(() => guardando = true);
+
+                              final ahora = DateTime.now();
+                              final fechaToma = DateTime(
+                                ahora.year,
+                                ahora.month,
+                                ahora.day,
+                                horaSeleccionada.hour,
+                                horaSeleccionada.minute,
+                              );
+
+                              try {
+                                final atendio =
+                                    await MedicamentoService.registrarToma(
+                                  medicamentoId: med.id!,
+                                  fechaToma: fechaToma,
+                                  notas: notasController.text,
+                                );
+
+                                if (!mounted) return;
+                                Navigator.pop(sheetContext);
+                                _snack(
+                                  atendio
+                                      ? '¡Toma de $medicamentoNombre registrada! El recordatorio quedó atendido.'
+                                      : '¡Toma de $medicamentoNombre registrada con éxito!',
+                                  color: _Paleta.primarioOscuro,
+                                );
+                                _cargarMedicamentos();
+                              } catch (e) {
+                                if (!mounted) return;
+                                setModalState(() => guardando = false);
+                                _snack(
+                                  e.toString().replaceFirst('Exception: ', ''),
+                                  color: Colors.red,
+                                );
+                              }
+                            },
+                      child: guardando
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text(
+                              'Confirmar Toma',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                 ],
@@ -474,7 +515,6 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                     const SizedBox(height: 18),
 
                     if (_seleccionada != null) ...[
-                      // Calcular estos horarios desde los medicamentos reales
                       if (listaMedicamentos.isNotEmpty) ...[
                         _tablaHorarios(),
                         const SizedBox(height: 25),
@@ -682,8 +722,44 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
     );
   }
 
-  // ---------------- TABLA DE HORARIOS (datos de ejemplo) ----------------
+  // ---------------- TABLA DE HORARIOS ----------------
+  // Junta las siguientes tomas de todos los medicamentos activos.
+  List<({DateTime fecha, String nombre})> _proximasDispensaciones() {
+    final tomas = <({DateTime fecha, String nombre})>[];
+
+    for (final med in listaMedicamentos) {
+      if (!med.esActivo) continue;
+      for (final fecha in med.proximasTomas) {
+        tomas.add((fecha: fecha.toLocal(), nombre: med.nombre));
+      }
+    }
+
+    tomas.sort((a, b) => a.fecha.compareTo(b.fecha));
+    return tomas.take(5).toList();
+  }
+
+  String _etiquetaDia(DateTime fecha) {
+    final hoy = DateTime.now();
+    final dia = DateTime(fecha.year, fecha.month, fecha.day);
+    final diferencia =
+        dia.difference(DateTime(hoy.year, hoy.month, hoy.day)).inDays;
+
+    if (diferencia == 0) return 'Hoy';
+    if (diferencia == 1) return 'Mañana';
+
+    String dos(int n) => n.toString().padLeft(2, '0');
+    return '${dos(fecha.day)}/${dos(fecha.month)}';
+  }
+
+  String _horaAmPm(DateTime fecha) {
+    final h = fecha.hour % 12 == 0 ? 12 : fecha.hour % 12;
+    final m = fecha.minute.toString().padLeft(2, '0');
+    return '$h:$m ${fecha.hour < 12 ? 'am' : 'pm'}';
+  }
+
   Widget _tablaHorarios() {
+    final tomas = _proximasDispensaciones();
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFDDF3EC),
@@ -710,11 +786,24 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
               ],
             ),
           ),
-          _buildRow('Hoy', '2:00 pm', isHighlight: true),
-          const Divider(height: 1, color: Color(0xFFB2DFDB)),
-          _buildRow('Hoy', '10:00 pm', isHighlight: true),
-          const Divider(height: 1, color: Color(0xFFB2DFDB)),
-          _buildRow('Mañana', '6:00 am', isHighlight: false),
+          if (tomas.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Text(
+                'No hay tomas pendientes en los tratamientos activos.',
+                style: TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+            )
+          else
+            for (var i = 0; i < tomas.length; i++) ...[
+              if (i > 0)
+                const Divider(height: 1, color: Color(0xFFB2DFDB)),
+              _buildRow(
+                '${_etiquetaDia(tomas[i].fecha)} · ${tomas[i].nombre}',
+                _horaAmPm(tomas[i].fecha),
+                isHighlight: _etiquetaDia(tomas[i].fecha) == 'Hoy',
+              ),
+            ],
         ],
       ),
     );
@@ -777,6 +866,11 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
           _buildDetailItem('Dosis:', med.dosis),
           _buildDetailItem('Frecuencia:', med.frecuencia),
           _buildDetailItem('Hora de administración:', med.horaAdministracion),
+          if (activo && med.proximaDosis != null)
+            _buildDetailItem(
+              'Próxima dosis:',
+              _fmtFechaHora(med.proximaDosis!),
+            ),
           _buildDetailItem('Fecha de inicio:', _fmt(med.fechaInicio)),
           _buildDetailItem('Fecha de finalización:', _fmt(med.fechaFinalizacion)),
           _buildDetailItem('Veterinario:', med.veterinario),
@@ -787,7 +881,7 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () =>
-                      _mostrarModalRegistrarToma(med.nombre, med.dosis),
+                      _mostrarModalRegistrarToma(med),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFA8E6CF),
                     foregroundColor: Colors.black87,
@@ -900,11 +994,15 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(day,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87)),
+          Expanded(
+            child: Text(day,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87)),
+          ),
+          const SizedBox(width: 12),
           Text(
             time,
             style: TextStyle(
@@ -916,6 +1014,12 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
         ],
       ),
     );
+  }
+
+  String _fmtFechaHora(DateTime fecha) {
+    final f = fecha.toLocal();
+    String dos(int n) => n.toString().padLeft(2, '0');
+    return '${dos(f.day)}/${dos(f.month)}/${f.year} ${dos(f.hour)}:${dos(f.minute)}';
   }
 
   Widget _buildDetailItem(String title, String value) {

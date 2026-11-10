@@ -4,11 +4,13 @@ class VacunaUpdateModal extends StatefulWidget {
   final DateTime? fechaInicial;
   final String estadoInicial;
   final String observacionesIniciales;
+  final DateTime? proximaDosisInicial;
 
   final Future<void> Function(
     DateTime fecha,
     String estado,
     String observaciones,
+    DateTime? proximaDosis,
   ) onGuardar;
 
   const VacunaUpdateModal({
@@ -16,6 +18,7 @@ class VacunaUpdateModal extends StatefulWidget {
     this.fechaInicial,
     this.estadoInicial = 'No aplicada',
     this.observacionesIniciales = '',
+    this.proximaDosisInicial,
     required this.onGuardar,
   });
 
@@ -24,10 +27,12 @@ class VacunaUpdateModal extends StatefulWidget {
     DateTime? fechaInicial,
     String estadoInicial = 'No aplicada',
     String observacionesIniciales = '',
+    DateTime? proximaDosisInicial,
     required Future<void> Function(
       DateTime fecha,
       String estado,
       String observaciones,
+      DateTime? proximaDosis,
     ) onGuardar,
   }) {
     return showDialog<bool>(
@@ -37,6 +42,7 @@ class VacunaUpdateModal extends StatefulWidget {
         fechaInicial: fechaInicial,
         estadoInicial: estadoInicial,
         observacionesIniciales: observacionesIniciales,
+        proximaDosisInicial: proximaDosisInicial,
         onGuardar: onGuardar,
       ),
     );
@@ -52,6 +58,7 @@ class _VacunaUpdateModalState
   static const Color turquesa = Color(0xFF4FC3B8);
 
   late DateTime fecha;
+  DateTime? proximaDosis;
   late String estado;
   late TextEditingController observacionesController;
 
@@ -69,6 +76,7 @@ class _VacunaUpdateModalState
     super.initState();
 
     fecha = widget.fechaInicial ?? DateTime.now();
+    proximaDosis = widget.proximaDosisInicial;
 
     estado = estados.contains(widget.estadoInicial)
         ? widget.estadoInicial
@@ -90,6 +98,56 @@ class _VacunaUpdateModalState
     final mes = fecha.month.toString().padLeft(2, '0');
 
     return '$dia/$mes/${fecha.year}';
+  }
+
+  Future<void> seleccionarProximaDosis() async {
+    final base = DateTime(fecha.year, fecha.month, fecha.day);
+    final minima = base.add(const Duration(days: 1));
+    final inicial = proximaDosis != null && proximaDosis!.isAfter(base)
+        ? proximaDosis!
+        : minima;
+
+    final seleccionada = await _abrirCalendario(
+      inicial: inicial,
+      primera: minima,
+      ayuda: 'Fecha de la próxima dosis',
+    );
+
+    if (seleccionada != null && mounted) {
+      setState(() {
+        proximaDosis = seleccionada;
+        error = null;
+      });
+    }
+  }
+
+  Future<DateTime?> _abrirCalendario({
+    required DateTime inicial,
+    required DateTime primera,
+    required String ayuda,
+  }) {
+    return showDatePicker(
+      context: context,
+      initialDate: inicial,
+      firstDate: primera,
+      lastDate: DateTime(2100),
+      helpText: ayuda,
+      cancelText: 'Cancelar',
+      confirmText: 'Aceptar',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: turquesa,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
   }
 
   Future<void> seleccionarFecha() async {
@@ -119,12 +177,27 @@ class _VacunaUpdateModalState
     if (seleccionada != null && mounted) {
       setState(() {
         fecha = seleccionada;
+        // La próxima dosis siempre va después de la aplicación.
+        if (proximaDosis != null && !proximaDosis!.isAfter(fecha)) {
+          proximaDosis = null;
+        }
         error = null;
       });
     }
   }
 
   Future<void> guardar() async {
+    final aplicada = estado == 'Aplicada';
+
+    if (aplicada &&
+        proximaDosis != null &&
+        !proximaDosis!.isAfter(fecha)) {
+      setState(() {
+        error = 'La próxima dosis debe ser posterior a la fecha de aplicación.';
+      });
+      return;
+    }
+
     setState(() {
       guardando = true;
       error = null;
@@ -135,6 +208,7 @@ class _VacunaUpdateModalState
         fecha,
         estado,
         observacionesController.text.trim(),
+        aplicada ? proximaDosis : null,
       );
 
       if (!mounted) return;
@@ -213,8 +287,10 @@ class _VacunaUpdateModalState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // FECHA
-                    const Text(
-                      'Fecha de la vacuna',
+                    Text(
+                      estado == 'Próxima dosis'
+                          ? 'Fecha en que toca la vacuna'
+                          : 'Fecha de la vacuna',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -315,6 +391,85 @@ class _VacunaUpdateModalState
                               }
                             },
                     ),
+
+                    if (estado == 'Aplicada') ...[
+                      const SizedBox(height: 22),
+                      const Text(
+                        'Fecha de la próxima dosis',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Opcional. Te enviaremos un recordatorio un día antes y el mismo día.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: guardando ? null : seleccionarProximaDosis,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 15,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.notifications_active_outlined,
+                                color: turquesa,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  proximaDosis == null
+                                      ? 'Sin próxima dosis'
+                                      : formatearFecha(proximaDosis!),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: proximaDosis == null
+                                        ? Colors.grey
+                                        : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              if (proximaDosis != null)
+                                IconButton(
+                                  tooltip: 'Quitar fecha',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: guardando
+                                      ? null
+                                      : () => setState(
+                                            () => proximaDosis = null,
+                                          ),
+                                  icon: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.grey,
+                                  ),
+                                )
+                              else
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Colors.grey,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 22),
 

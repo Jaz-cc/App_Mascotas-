@@ -167,6 +167,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     const primaryBackground = Color(0xFFE2F4F1);

@@ -372,7 +372,8 @@ class MedicamentoModal {
                             const SizedBox(height: 5),
 
                             const Text(
-                              'Agrega una o varias horas para administrar el medicamento.',
+                              'La primera hora es la de la primera dosis (fecha de inicio). '
+                              'Con la frecuencia se crean los recordatorios de las siguientes tomas.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: gris,

@@ -53,6 +53,34 @@ class MedicamentoService {
     return Exception('$mensaje (HTTP ${response.statusCode})');
   }
 
+  // REGISTRAR TOMA
+  // Regresa true si con esta toma se atendió un recordatorio.
+  static Future<bool> registrarToma({
+    required int medicamentoId,
+    required DateTime fechaToma,
+    String notas = '',
+  }) async {
+    final headers = await _obtenerHeaders();
+
+    final response = await http
+        .post(
+          _url('/$medicamentoId/tomas'),
+          headers: headers,
+          body: jsonEncode({
+            'fechaToma': fechaToma.toUtc().toIso8601String(),
+            if (notas.trim().isNotEmpty) 'notas': notas.trim(),
+          }),
+        )
+        .timeout(ApiConfig.timeout);
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw _errorRespuesta(response);
+    }
+
+    final body = jsonDecode(utf8.decode(response.bodyBytes));
+    return body is Map && body['recordatorioAtendido'] != null;
+  }
+
   // REGISTRAR MEDICAMENTO
   static Future<Medicamento> registrarMedicamento(
     Medicamento medicamento,

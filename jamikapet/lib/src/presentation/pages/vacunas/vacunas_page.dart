@@ -122,7 +122,8 @@ class _VacunasScreenState extends State<VacunasScreen> {
       fechaInicial: vacuna.fecha,
       estadoInicial: vacuna.estado.etiqueta,
       observacionesIniciales: vacuna.observaciones ?? '',
-      onGuardar: (fecha, estado, observaciones) async {
+      proximaDosisInicial: vacuna.proximaDosis,
+      onGuardar: (fecha, estado, observaciones, proximaDosis) async {
         final token = await _obtenerToken();
 
         if (token == null || token.isEmpty) {
@@ -138,6 +139,7 @@ class _VacunasScreenState extends State<VacunasScreen> {
           fecha: fecha,
           estado: estado,
           observaciones: observaciones,
+          proximaDosis: proximaDosis,
         );
       },
     );
@@ -571,6 +573,28 @@ class _VacunasScreenState extends State<VacunasScreen> {
                       ),
                     ],
                   ),
+                  if (vacuna.estado == EstadoVacuna.aplicada &&
+                      vacuna.proximaDosis != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.notifications_active_outlined,
+                          size: 14,
+                          color: _Paleta.primarioOscuro,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Próxima dosis: ${vacuna.proximaDosisFormateada}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _Paleta.primarioOscuro,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (vacuna.descripcion.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Text(
@@ -664,7 +688,6 @@ class _Paleta {
   static const borde = Color(0xFFCBE5E2);
   static const tinta = Color(0xFF16302D);
   static const tintaSuave = Color(0xFF5C7A77);
-
   static const aplicada = Color(0xFF2E9E5B);
   static const proxima = Color(0xFF2E7BC9);
   static const pendiente = Color(0xFFC94F4F);

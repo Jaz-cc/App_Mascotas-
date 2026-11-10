@@ -53,6 +53,7 @@ class VacunaService {
     required DateTime fecha,
     required String estado,
     required String observaciones,
+    DateTime? proximaDosis,
   }) async {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/vacunas/registro/$registroId',);
@@ -66,8 +67,11 @@ class VacunaService {
             },
             body: jsonEncode({
               'estado': estado,
-              'fecha': fecha.toIso8601String().split('T').first,
+              'fecha': _soloFecha(fecha),
               'observaciones': observaciones,
+              'proximaDosis': estado == 'Aplicada' && proximaDosis != null
+                  ? _soloFecha(proximaDosis)
+                  : null,
             }),
           )
           .timeout(_timeout);
@@ -98,6 +102,11 @@ class VacunaService {
     }
   }
 
+
+  String _soloFecha(DateTime fecha) {
+    String dos(int n) => n.toString().padLeft(2, '0');
+    return '${fecha.year}-${dos(fecha.month)}-${dos(fecha.day)}';
+  }
 
   String _mensajeError(http.Response r, String porDefecto) {
     try {

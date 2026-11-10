@@ -29,6 +29,7 @@ class Vacuna {
   final String nombre;
   final String descripcion;
   final DateTime? fecha;
+  final DateTime? proximaDosis;
   final EstadoVacuna estado;
   final String? observaciones;
 
@@ -38,6 +39,7 @@ class Vacuna {
     required this.nombre,
     required this.descripcion,
     required this.fecha,
+    this.proximaDosis,
     required this.estado,
     this.observaciones,
   });
@@ -52,6 +54,9 @@ class Vacuna {
       fecha: json['fecha'] == null
           ? null
           : DateTime.tryParse(json['fecha'].toString()),
+      proximaDosis: json['proximaDosis'] == null
+          ? null
+          : DateTime.tryParse(json['proximaDosis'].toString()),
       estado: EstadoVacuna.desdeTexto(
         json['estado'] is String
             ? json['estado'] as String
@@ -62,8 +67,12 @@ class Vacuna {
   }
 
   /// dd/MM/yyyy sin depender del paquete intl.
-  String get fechaFormateada {
-    final f = fecha?.toLocal();
+  String get fechaFormateada => _formatear(fecha);
+
+  String get proximaDosisFormateada => _formatear(proximaDosis);
+
+  // El backend manda solo la fecha (YYYY-MM-DD), no se convierte de zona.
+  static String _formatear(DateTime? f) {
     if (f == null) return 'Sin fecha';
 
     String dos(int n) => n.toString().padLeft(2, '0');

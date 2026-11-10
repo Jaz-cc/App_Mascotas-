@@ -11,6 +11,12 @@ class Medicamento {
   final String veterinario;
   final bool esActivo;
 
+  // Calculada por el backend a partir de la primera dosis y la frecuencia.
+  final DateTime? proximaDosis;
+
+  // Siguientes tomas calculadas por el backend.
+  final List<DateTime> proximasTomas;
+
   Medicamento({
     this.id,
     required this.mascotaId,
@@ -23,6 +29,8 @@ class Medicamento {
     required this.indicaciones,
     required this.veterinario,
     this.esActivo = true,
+    this.proximaDosis,
+    this.proximasTomas = const [],
   });
 
   factory Medicamento.fromJson(Map<String, dynamic> json) {
@@ -41,7 +49,14 @@ class Medicamento {
           DateTime.parse(json['fechaFinalizacion'].toString()),
       indicaciones: json['indicaciones']?.toString() ?? '',
       veterinario: json['veterinario']?.toString() ?? '',
-      esActivo: json['esActivo'] ?? true,
+      esActivo: (json['esActivo'] ?? json['activo'] ?? true) == true,
+      proximaDosis: json['proximaDosis'] == null
+          ? null
+          : DateTime.tryParse(json['proximaDosis'].toString()),
+      proximasTomas: (json['proximasTomas'] as List? ?? [])
+          .map((v) => DateTime.tryParse(v.toString()))
+          .whereType<DateTime>()
+          .toList(),
     );
   }
 
