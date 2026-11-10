@@ -473,7 +473,9 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
           },
         );
       },
-    ).whenComplete(notasController.dispose);
+    );
+    // notasController no se libera aquí: la hoja sigue animándose al cerrar
+    // y usarlo ya liberado provoca la pantalla roja.
   }
 
   // ---------------- BUILD ----------------

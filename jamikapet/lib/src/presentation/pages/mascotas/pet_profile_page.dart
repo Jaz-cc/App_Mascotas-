@@ -111,196 +111,11 @@ class _PetProfilePageState extends State<PetProfilePage> {
   }
 
 Future<void> _editarMascota(Mascota mascota) async {
-  final formKey = GlobalKey<FormState>();
-
-  final nombreController =
-      TextEditingController(text: mascota.nombrePet);
-  final razaController =
-      TextEditingController(text: mascota.raza);
-  final edadController =
-      TextEditingController(text: mascota.edad.toString());
-  final pesoController =
-      TextEditingController(text: mascota.peso.toString());
-
-  String especie = mascota.especie.toLowerCase() == 'gato'
-      ? 'Gato'
-      : 'Perro';
-
-  String sexo = mascota.sexo.toLowerCase() == 'hembra'
-      ? 'Hembra'
-      : 'Macho';
-
+  // El diálogo maneja sus propios controladores y los libera al cerrarse.
   final datos = await showDialog<Map<String, dynamic>>(
     context: context,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (context, actualizarDialogo) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(22),
-            ),
-            title: const Text(
-              'Editar mascota',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: _Paleta.tinta,
-              ),
-            ),
-            content: SingleChildScrollView(
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: nombreController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nombre',
-                        prefixIcon: Icon(Icons.pets),
-                      ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty
-                              ? 'Escribe el nombre'
-                              : null,
-                    ),
-                    const SizedBox(height: 12),
-
-                    DropdownButtonFormField<String>(
-                      initialValue: especie,
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo de mascota',
-                        prefixIcon: Icon(Icons.category_outlined),
-                      ),
-                      items: ['Perro', 'Gato']
-                          .map((e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e),
-                              ))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) {
-                          actualizarDialogo(() => especie = v);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: razaController,
-                      decoration: const InputDecoration(
-                        labelText: 'Raza',
-                        prefixIcon: Icon(Icons.pets_outlined),
-                      ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty
-                              ? 'Escribe la raza'
-                              : null,
-                    ),
-                    const SizedBox(height: 12),
-
-                    DropdownButtonFormField<String>(
-                      initialValue: sexo,
-                      decoration: const InputDecoration(
-                        labelText: 'Sexo',
-                        prefixIcon: Icon(Icons.wc),
-                      ),
-                      items: ['Macho', 'Hembra']
-                          .map((e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e),
-                              ))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) {
-                          actualizarDialogo(() => sexo = v);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: edadController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Edad',
-                        suffixText: 'años',
-                        prefixIcon: Icon(Icons.cake_outlined),
-                      ),
-                      validator: (v) {
-                        final edad = int.tryParse(v ?? '');
-                        if (edad == null || edad < 0) {
-                          return 'Edad no válida';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: pesoController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Peso',
-                        suffixText: 'kg',
-                        prefixIcon:
-                            Icon(Icons.monitor_weight_outlined),
-                      ),
-                      validator: (v) {
-                        final peso = double.tryParse(
-                          (v ?? '').replaceAll(',', '.'),
-                        );
-                        if (peso == null || peso <= 0) {
-                          return 'Peso no válido';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () =>
-                    Navigator.pop(dialogContext),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _Paleta.primarioOscuro,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () {
-                  if (!formKey.currentState!.validate()) return;
-
-                  Navigator.pop(dialogContext, {
-                    'nombre': nombreController.text.trim(),
-                    'especie': especie,
-                    'raza': razaController.text.trim(),
-                    'sexo': sexo,
-                    'edad': int.parse(edadController.text),
-                    'peso': double.parse(
-                      pesoController.text.replaceAll(',', '.'),
-                    ),
-                  });
-                },
-                child: const Text('Guardar cambios'),
-              ),
-            ],
-          );
-        },
-      );
-    },
+    builder: (_) => _EditarMascotaDialog(mascota: mascota),
   );
-
-  nombreController.dispose();
-  razaController.dispose();
-  edadController.dispose();
-  pesoController.dispose();
 
   if (datos == null || !mounted) return;
 
@@ -834,4 +649,210 @@ class _Paleta {
   static const verdeMuyClaro = Color(0xFFD1F0EE);
   static const tinta = Color(0xFF16302D);
   static const tintaSuave = Color(0xFF5C7A77);
+}
+
+class _EditarMascotaDialog extends StatefulWidget {
+  const _EditarMascotaDialog({required this.mascota});
+
+  final Mascota mascota;
+
+  @override
+  State<_EditarMascotaDialog> createState() => _EditarMascotaDialogState();
+}
+
+class _EditarMascotaDialogState extends State<_EditarMascotaDialog> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _nombre;
+  late final TextEditingController _raza;
+  late final TextEditingController _edad;
+  late final TextEditingController _peso;
+
+  late String especie;
+  late String sexo;
+
+  @override
+  void initState() {
+    super.initState();
+    final mascota = widget.mascota;
+
+    _nombre = TextEditingController(text: mascota.nombrePet);
+    _raza = TextEditingController(text: mascota.raza);
+    _edad = TextEditingController(text: mascota.edad.toString());
+    _peso = TextEditingController(text: mascota.peso.toString());
+
+    especie = mascota.especie.toLowerCase() == 'gato' ? 'Gato' : 'Perro';
+    sexo = mascota.sexo.toLowerCase() == 'hembra' ? 'Hembra' : 'Macho';
+  }
+
+  // Se llama cuando el diálogo ya terminó de cerrarse.
+  @override
+  void dispose() {
+    _nombre.dispose();
+    _raza.dispose();
+    _edad.dispose();
+    _peso.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
+      title: const Text(
+        'Editar mascota',
+        style: TextStyle(
+          fontWeight: FontWeight.w800,
+          color: _Paleta.tinta,
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nombre,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  prefixIcon: Icon(Icons.pets),
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty
+                        ? 'Escribe el nombre'
+                        : null,
+              ),
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField<String>(
+                initialValue: especie,
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de mascota',
+                  prefixIcon: Icon(Icons.category_outlined),
+                ),
+                items: ['Perro', 'Gato']
+                    .map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => especie = v);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _raza,
+                decoration: const InputDecoration(
+                  labelText: 'Raza',
+                  prefixIcon: Icon(Icons.pets_outlined),
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty
+                        ? 'Escribe la raza'
+                        : null,
+              ),
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField<String>(
+                initialValue: sexo,
+                decoration: const InputDecoration(
+                  labelText: 'Sexo',
+                  prefixIcon: Icon(Icons.wc),
+                ),
+                items: ['Macho', 'Hembra']
+                    .map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => sexo = v);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _edad,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Edad',
+                  suffixText: 'años',
+                  prefixIcon: Icon(Icons.cake_outlined),
+                ),
+                validator: (v) {
+                  final edad = int.tryParse(v ?? '');
+                  if (edad == null || edad < 0) {
+                    return 'Edad no válida';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _peso,
+                keyboardType:
+                    const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Peso',
+                  suffixText: 'kg',
+                  prefixIcon:
+                      Icon(Icons.monitor_weight_outlined),
+                ),
+                validator: (v) {
+                  final peso = double.tryParse(
+                    (v ?? '').replaceAll(',', '.'),
+                  );
+                  if (peso == null || peso <= 0) {
+                    return 'Peso no válido';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _Paleta.primarioOscuro,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) return;
+
+            Navigator.pop(context, {
+              'nombre': _nombre.text.trim(),
+              'especie': especie,
+              'raza': _raza.text.trim(),
+              'sexo': sexo,
+              'edad': int.parse(_edad.text),
+              'peso': double.parse(
+                _peso.text.replaceAll(',', '.'),
+              ),
+            });
+          },
+          child: const Text('Guardar cambios'),
+        ),
+      ],
+    );
+  }
 }
