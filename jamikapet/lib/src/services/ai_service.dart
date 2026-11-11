@@ -62,7 +62,8 @@ class IaService {
           headers: headers,
           body: jsonEncode({'prompt': prompt}),
         )
-        .timeout(ApiConfig.timeout);
+        // El backend puede tardar hasta 30 s (Gemini + respaldo con Groq).
+        .timeout(const Duration(seconds: 45));
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;

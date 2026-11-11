@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -151,8 +153,7 @@ class _ChatIaPageState extends State<ChatIaPage> {
           _ChatMessage(
             isUser: false,
             isError: true,
-            text:
-                'No pude conectar con la IA: ${e.toString().replaceAll("Exception: ", "")}',
+            text: _mensajeError(e),
             time: DateTime.now(),
           ),
         );
@@ -161,6 +162,17 @@ class _ChatIaPageState extends State<ChatIaPage> {
     }
 
     _scrollToBottom();
+  }
+
+  String _mensajeError(Object e) {
+    if (e is TimeoutException) {
+      return 'La IA está tardando en responder. Intenta de nuevo en un momento.';
+    }
+    if (e is SocketException) {
+      return 'No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.';
+    }
+    final texto = e.toString().replaceAll('Exception: ', '');
+    return 'No pude obtener respuesta de la IA: $texto';
   }
 
   void _scrollToBottom() {
