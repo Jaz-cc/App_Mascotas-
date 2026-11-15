@@ -5,7 +5,7 @@ import 'package:jamikapet/src/presentation/widgets/app_text_field.dart';
 import 'package:jamikapet/src/presentation/widgets/app_password_field.dart';
 import 'package:jamikapet/src/presentation/widgets/app_button.dart';
 import 'package:jamikapet/src/presentation/widgets/app_terms_checkbox.dart';
-import 'package:jamikapet/src/presentation/widgets/app_logo.dart';
+import 'package:jamikapet/src/presentation/widgets/dog_mascota.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -41,6 +41,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // Campos que el usuario ya tocó
   final Set<String> _tocados = {};
+
+  // Campo que tiene el cursor en este momento
+  String? _campoActivo;
 
   // =========================================================
   // VALIDACIONES POR CAMPO (null = el campo está bien)
@@ -96,7 +99,9 @@ class _RegisterPageState extends State<RegisterPage> {
       _errorConfirmar != null ||
       _errorTerminos != null;
 
+  // =========================================================
   // REGISTRO
+  // =========================================================
   Future<void> registrarUsuario() async {
     FocusScope.of(context).unfocus();
 
@@ -185,7 +190,8 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // Campo + error debajo (si ya lo tocó o si intentó registrarse)
+  // Campo + error debajo (si ya lo tocó o si intentó registrarse).
+  // También detecta cuándo el campo tiene el foco, para la mascota.
   Widget _campo(String campo, String? error, Widget child) {
     final mostrarError =
         (_tocados.contains(campo) || _intentoRegistrar) && error != null;
@@ -193,7 +199,18 @@ class _RegisterPageState extends State<RegisterPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        child,
+        Focus(
+          onFocusChange: (tieneFoco) {
+            setState(() {
+              if (tieneFoco) {
+                _campoActivo = campo;
+              } else if (_campoActivo == campo) {
+                _campoActivo = null;
+              }
+            });
+          },
+          child: child,
+        ),
         if (mostrarError) _mensajeError(error),
       ],
     );
@@ -220,6 +237,108 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  // =========================================================
+  // MASCOTA
+  // =========================================================
+  TextEditingController? get _controladorActivo {
+    switch (_campoActivo) {
+      case 'nombre':
+        return nombreController;
+      case 'apellido':
+        return apellidoController;
+      case 'telefono':
+        return phoneController;
+      case 'email':
+        return emailController;
+      default:
+        return null;
+    }
+  }
+
+  // Los ojos siguen el texto: vacío = izquierda, lleno = derecha
+  double get _lookX {
+    final c = _controladorActivo;
+    if (c == null) return 0;
+    return (c.text.length / 18).clamp(0.0, 1.0) * 2 - 1;
+  }
+
+  DogMood get _mood {
+    if (isLoading) return DogMood.happy;
+    if (_campoActivo == 'password' || _campoActivo == 'confirmar') {
+      return DogMood.password;
+    }
+    if (_intentoRegistrar && _hayErrores) return DogMood.sad;
+    if (!_hayErrores) return DogMood.happy;
+    if (_campoActivo != null) return DogMood.typing;
+    return DogMood.idle;
+  }
+
+  String get _mensaje {
+    switch (_mood) {
+      case DogMood.happy:
+        return isLoading
+            ? '¡Guau! Creando tu cuenta... 🐾'
+            : '¡Todo listo! Presiona Registrarse 🎉';
+      case DogMood.password:
+        return 'No miro, lo prometo 🙈';
+      case DogMood.sad:
+        return 'Uy, faltan algunos datos 🥺';
+      case DogMood.typing:
+        switch (_campoActivo) {
+          case 'nombre':
+            return '¿Cómo te llamas? 🐶';
+          case 'apellido':
+            return '¿Y tu apellido?';
+          case 'telefono':
+            return 'Tu número, 10 dígitos 📱';
+          case 'email':
+            return 'Tu correo, ¡sin spam! ✉️';
+          case 'terminos':
+            return 'Léelos con calma 📄';
+          default:
+            return '¡Sigue así!';
+        }
+      case DogMood.idle:
+        return '¡Hola! Soy Jamik 🐾\nTe ayudo a registrarte';
+    }
+  }
+
+  Widget _mascota() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        DogMascot(mood: _mood, lookX: _lookX, size: 110),
+        const SizedBox(width: 8),
+        Flexible(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: Container(
+              key: ValueKey(_mensaje),
+              constraints: const BoxConstraints(maxWidth: 220),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _accentColor.withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                _mensaje,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =========================================================
+  // BUILD
+  // =========================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,8 +368,12 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const AppLogo(width: 120, height: 120),
-                          const SizedBox(height: 16),
+                          // MASCOTA ANIMADA
+                          _mascota(),
+
+                          const SizedBox(height: 8),
+
+                          // TÍTULO
                           const Text(
                             'REGISTRO DE USUARIO',
                             textAlign: TextAlign.center,
@@ -261,6 +384,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               letterSpacing: 0.5,
                             ),
                           ),
+
                           const SizedBox(height: 24),
 
                           // TARJETA CON EL FORMULARIO
