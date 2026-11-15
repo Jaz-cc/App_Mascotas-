@@ -520,82 +520,117 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
 
   // Tarjeta de bienvenida
   Widget _encabezado() {
-    return Container(
+        return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 20, 16, 20),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
         gradient: const LinearGradient(
-          colors: [_Paleta.primarioOscuro, _Paleta.primario],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [_Paleta.primario, _Paleta.primarioOscuro],
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: _Paleta.primarioOscuro.withValues(alpha: 0.28),
+            color: Color(0x401F7A70),
             blurRadius: 22,
-            offset: const Offset(0, 10),
+            offset: Offset(0, 10),
           ),
         ],
       ),
       child: Stack(
-        clipBehavior: Clip.none,
         children: [
+          // Huellas decorativas
           Positioned(
-            right: -4,
-            top: -12,
-            child: Icon(
-              Icons.pets_rounded,
-              size: 92,
-              color: Colors.white.withValues(alpha: 0.14),
+            top: -14,
+            right: -10,
+            child: Transform.rotate(
+              angle: 0.35,
+              child: Icon(
+                Icons.pets,
+                size: 96,
+                color: Colors.white.withValues(alpha: 0.14),
+              ),
             ),
           ),
-          Row(
-            children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.4, end: 1),
-                duration: const Duration(milliseconds: 900),
-                curve: Curves.elasticOut,
-                builder: (_, escala, child) =>
-                    Transform.scale(scale: escala, child: child),
-                child: Container(
-                  width: 58,
-                  height: 58,
+          Positioned(
+            bottom: -20,
+            left: -12,
+            child: Transform.rotate(
+              angle: -0.4,
+              child: Icon(
+                Icons.pets,
+                size: 70,
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(18),
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      width: 3,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 12,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
                   ),
-                  alignment: Alignment.center,
-                  child: const Text('🐾', style: TextStyle(fontSize: 28)),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Nueva mascota',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.3,
+                  // Mascota animada (reemplaza el corazón)
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/img/mascota_anim.gif',
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      // Si el archivo no existe o falla, muestra el corazón
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.favorite_rounded,
+                        color: _Paleta.primarioOscuro,
+                        size: 32,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Cuéntanos un poco sobre tu compañero.',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        height: 1.35,
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Nueva Mascota",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        "Cuéntanos un poco sobre tu compañero.",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xE6FFFFFF),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -603,7 +638,6 @@ class _RegistroMascotaScreenState extends State<RegistroMascotaScreen> {
   }
 
   // Selector de género
-
   Widget _selectorGenero() {
     return Container(
       padding: const EdgeInsets.all(5),
