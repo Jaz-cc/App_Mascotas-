@@ -48,6 +48,11 @@ class _ChatIaPageState extends State<ChatIaPage> {
 
   bool _isTyping = false;
   bool _mostrarAviso = true;
+  bool _cargandoPagina = true;
+  Timer? _timerCarga;
+
+  static const _gifCargando = 'assets/img/gato_cargando.gif';
+  static const _gifPensando = 'assets/img/perro_pensando.gif';
   Uint8List? _selectedImageBytes;
   String _selectedImageMime = 'image/jpeg';
 
@@ -69,7 +74,25 @@ class _ChatIaPageState extends State<ChatIaPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Pantalla breve de bienvenida con el gatito mientras se arma el chat
+    _timerCarga = Timer(const Duration(milliseconds: 1600), () {
+      if (mounted) setState(() => _cargandoPagina = false);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Deja listos los GIFs para que no parpadeen al aparecer
+    precacheImage(const AssetImage(_gifCargando), context);
+    precacheImage(const AssetImage(_gifPensando), context);
+  }
+
+  @override
   void dispose() {
+    _timerCarga?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -203,12 +226,27 @@ class _ChatIaPageState extends State<ChatIaPage> {
         mostrarRegreso: true,
         icon: Icons.smart_toy_outlined,
       ),
-      body: Column(
-        children: [
-          if (_mostrarAviso) _aviso(),
-          Expanded(child: _listaMensajes()),
-          _compositor(),
-        ],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 450),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animacion) => FadeTransition(
+          opacity: animacion,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.97, end: 1).animate(animacion),
+            child: child,
+          ),
+        ),
+        child: _cargandoPagina
+            ? _pantallaCarga()
+            : Column(
+                key: const ValueKey('chat'),
+                children: [
+                  if (_mostrarAviso) _aviso(),
+                  Expanded(child: _listaMensajes()),
+                  _compositor(),
+                ],
+              ),
       ),
       bottomNavigationBar: AppBottomNavigation(
         currentIndex: 1,
@@ -228,6 +266,56 @@ class _ChatIaPageState extends State<ChatIaPage> {
               break;
           }
         },
+      ),
+    );
+  }
+
+  Widget _pantallaCarga() {
+    return Center(
+      key: const ValueKey('carga'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 180,
+            height: 180,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: _C.primario.withValues(alpha: 0.14),
+                  blurRadius: 30,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Image.asset(
+              _gifCargando,
+              width: 150,
+              height: 150,
+              gaplessPlayback: true,
+              filterQuality: FilterQuality.medium,
+            ),
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Despertando a Jamika',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: _C.tinta,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Preparando tu asistente de mascotas',
+            style: TextStyle(fontSize: 13.5, color: _C.textoSuave),
+          ),
+          const SizedBox(height: 14),
+          const _PuntosEscribiendo(),
+        ],
       ),
     );
   }
@@ -400,10 +488,17 @@ class _ChatIaPageState extends State<ChatIaPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _avatarIa(),
-          const SizedBox(width: 8),
+          Image.asset(
+            _gifPensando,
+            width: 64,
+            height: 64,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.medium,
+          ),
+          const SizedBox(width: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: const BorderRadius.only(
@@ -414,7 +509,22 @@ class _ChatIaPageState extends State<ChatIaPage> {
               ),
               border: Border.all(color: _C.borde),
             ),
-            child: const _PuntosEscribiendo(),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Jamika está pensando',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _C.textoSuave,
+                  ),
+                ),
+                SizedBox(height: 8),
+                _PuntosEscribiendo(),
+              ],
+            ),
           ),
         ],
       ),

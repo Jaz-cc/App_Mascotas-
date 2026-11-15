@@ -22,6 +22,19 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
   String? _error;
   Timer? _actualizador;
 
+  static const _gifCargando = 'assets/img/gato_cargando.gif';
+  static const _gifVacio = 'assets/img/perro.gif';
+  static const _gifJugando = 'assets/img/jugando.gif';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Deja listos los GIFs para que no parpadeen al aparecer
+    precacheImage(const AssetImage(_gifCargando), context);
+    precacheImage(const AssetImage(_gifVacio), context);
+    precacheImage(const AssetImage(_gifJugando), context);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -177,7 +190,18 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                   children: [
                     _resumen(),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 4),
+                    // Escena del perrito y el gatito jugando con la pelota
+                    AspectRatio(
+                      aspectRatio: 480 / 200,
+                      child: Image.asset(
+                        _gifJugando,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.medium,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     const Text(
                       'Tus notificaciones',
                       style: TextStyle(
@@ -190,10 +214,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
                     _filtros(),
                     const SizedBox(height: 16),
                     if (_cargando)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 36),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
+                      _estadoCargando()
                     else if (_error != null)
                       _estadoError()
                     else if (notificaciones.isEmpty)
@@ -505,22 +526,57 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
     );
   }
 
-  Widget _estadoVacio() {
+  Widget _estadoCargando() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.notifications_off_outlined,
-            size: 42,
-            color: _Colores.primarioOscuro,
+          Image.asset(
+            _gifCargando,
+            width: 130,
+            height: 130,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.medium,
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Buscando tus recordatorios',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: _Colores.tinta,
+            ),
           ),
           const SizedBox(height: 12),
+          const _PuntosCargando(),
+        ],
+      ),
+    );
+  }
+
+  Widget _estadoVacio() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          Image.asset(
+            _gifVacio,
+            width: 120,
+            height: 120,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.medium,
+          ),
+          const SizedBox(height: 8),
           const Text(
             'No hay notificaciones',
             style: TextStyle(
@@ -579,4 +635,52 @@ class _Colores {
   static const borde = Color(0xFFCBE5E2);
   static const tinta = Color(0xFF16302D);
   static const textoSuave = Color(0xFF5C7A77);
+}
+
+// Tres puntos que se encienden en secuencia mientras carga
+class _PuntosCargando extends StatefulWidget {
+  const _PuntosCargando();
+
+  @override
+  State<_PuntosCargando> createState() => _PuntosCargandoState();
+}
+
+class _PuntosCargandoState extends State<_PuntosCargando>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final fase = (_controller.value - i * 0.18) % 1.0;
+            final opacidad =
+                (fase < 0.5 ? fase * 2 : (1 - fase) * 2).clamp(0.25, 1.0);
+            return Container(
+              margin: EdgeInsets.only(right: i == 2 ? 0 : 6),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _Colores.primarioOscuro.withValues(alpha: opacidad),
+                shape: BoxShape.circle,
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
 }
