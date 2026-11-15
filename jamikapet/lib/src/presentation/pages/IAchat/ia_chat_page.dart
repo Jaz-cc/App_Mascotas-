@@ -53,6 +53,8 @@ class _ChatIaPageState extends State<ChatIaPage> {
 
   static const _gifCargando = 'assets/img/gato_cargando.gif';
   static const _gifPensando = 'assets/img/perro_pensando.gif';
+  static const _gifAppBar = 'assets/img/mascota_anim.gif';
+  static const _gifAvatar = 'assets/img/perro.gif';
   Uint8List? _selectedImageBytes;
   String _selectedImageMime = 'image/jpeg';
 
@@ -88,6 +90,8 @@ class _ChatIaPageState extends State<ChatIaPage> {
     // Deja listos los GIFs para que no parpadeen al aparecer
     precacheImage(const AssetImage(_gifCargando), context);
     precacheImage(const AssetImage(_gifPensando), context);
+    precacheImage(const AssetImage(_gifAppBar), context);
+    precacheImage(const AssetImage(_gifAvatar), context);
   }
 
   @override
@@ -225,6 +229,7 @@ class _ChatIaPageState extends State<ChatIaPage> {
         mostrarLogo: true,
         mostrarRegreso: true,
         icon: Icons.smart_toy_outlined,
+        iconoAsset: _gifAppBar,
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 450),
@@ -376,19 +381,16 @@ class _ChatIaPageState extends State<ChatIaPage> {
     );
   }
 
+  // Avatar de Jamika: el perrito sin nube, suelto (sin círculo)
   Widget _avatarIa() {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [_C.primario, _C.primarioClaro],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: const Icon(Icons.pets, color: Colors.white, size: 17),
+    return Image.asset(
+      _gifAvatar,
+      width: 46,
+      height: 46,
+      gaplessPlayback: true,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (_, _, _) =>
+          const Icon(Icons.pets, color: _C.primario, size: 22),
     );
   }
 

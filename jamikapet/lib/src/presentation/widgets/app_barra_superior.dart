@@ -9,6 +9,8 @@ class HeaderAppBar extends StatelessWidget
   final String titulo;
   final String subtitulo;
   final IconData? icon;
+  // Imagen o GIF en lugar del ícono (tiene prioridad sobre icon)
+  final String? iconoAsset;
   final Color colorTexto;
   final Color colorSubtitulo;
   final Color? colorFondo;
@@ -23,6 +25,7 @@ class HeaderAppBar extends StatelessWidget
     this.titulo = '',
     this.subtitulo = '',
     this.icon,
+    this.iconoAsset,
     this.colorTexto = _Paleta.primarioOscuro,
     this.colorSubtitulo = _Paleta.textoSuave,
     this.colorFondo = _Paleta.fondo,
@@ -64,7 +67,38 @@ class HeaderAppBar extends StatelessWidget
               // -----------------------------------------------------
               // ICONO OPCIONAL
               // -----------------------------------------------------
-              if (icon != null) ...[
+              if (iconoAsset != null) ...[
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1F0F3D3A),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      iconoAsset!,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      filterQuality: FilterQuality.medium,
+                      errorBuilder: (_, _, _) => Icon(
+                        icon ?? Icons.pets,
+                        color: colorTexto,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ] else if (icon != null) ...[
                 Icon(
                   icon,
                   color: colorTexto,

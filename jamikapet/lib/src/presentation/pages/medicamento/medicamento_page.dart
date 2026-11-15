@@ -597,6 +597,9 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _encabezadoLogo(),
+                    const SizedBox(height: 20),
+
                     _tarjetaEncabezado(),
                     const SizedBox(height: 18),
 
@@ -713,6 +716,126 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
       ),
     );
   }
+
+    // Encabezado
+  Widget _encabezadoLogo() {
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_Paleta.primario, _Paleta.primarioOscuro],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x401F7A70),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Huellas decorativas
+          Positioned(
+            top: -14,
+            right: -10,
+            child: Transform.rotate(
+              angle: 0.35,
+              child: Icon(
+                Icons.pets,
+                size: 96,
+                color: Colors.white.withValues(alpha: 0.14),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -20,
+            left: -12,
+            child: Transform.rotate(
+              angle: -0.4,
+              child: Icon(
+                Icons.pets,
+                size: 70,
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      width: 3,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 12,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  // Mascota animada (reemplaza el corazón)
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/img/mascota_anim.gif',
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      // Si el archivo no existe o falla, muestra el corazón
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.favorite_rounded,
+                        color: _Paleta.primarioOscuro,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Mi Mascota",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        "Bitácora de salud y cuidado",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xE6FFFFFF),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   // ---------------- TARJETA ENCABEZADO ----------------
   Widget _tarjetaEncabezado() {
@@ -1398,7 +1521,8 @@ class _MedicamentoPageState extends State<MedicamentoPage> {
 }
 
 class _Paleta {
-  static const Color fondo = Color(0xFFE2F4F1);
+  static const Color fondo = Color(0xFFE2F4F1);  
+  static const primario = Color(0xFF55C8BD);
   static const Color primarioOscuro = Color(0xFF1F7A70);
   static const Color botonSecundario = Color(0xFF4DB6AC);
   static const Color verdeMuyClaro = Color(0xFFD5F0EB);
