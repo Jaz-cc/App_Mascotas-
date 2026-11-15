@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:jamikapet/src/models/mascota.dart';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
+import 'package:jamikapet/src/presentation/widgets/app_animaciones.dart';
 import 'package:jamikapet/src/presentation/widgets/app_barra_superior.dart';
 import 'package:jamikapet/src/presentation/widgets/app_footer.dart';
 import 'package:jamikapet/src/services/pets_service.dart';
@@ -13,6 +14,12 @@ class PetPage extends StatefulWidget {
   static const Color primario = Color(0xFF1F7A70);
   static const Color tinta = Color(0xFF16302D);
   static const Color tintaSuave = Color(0xFF5C7A77);
+
+  // Tonos derivados del primario para degradados y fondos suaves.
+  static final Color primarioClaro =
+      Color.lerp(primario, Colors.white, 0.28)!;
+  static final Color primarioPastel =
+      Color.lerp(primario, Colors.white, 0.88)!;
 
   @override
   State<PetPage> createState() => _PetPageState();
@@ -75,7 +82,13 @@ class _PetPageState extends State<PetPage> {
       ),
 
       body: SafeArea(
-        child: _contenido(),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: KeyedSubtree(
+            key: ValueKey('$_cargando-${_error != null}-${_mascotas.length}'),
+            child: _contenido(),
+          ),
+        ),
       ),
 
       // Barra de navegación abajo
@@ -99,24 +112,84 @@ class _PetPageState extends State<PetPage> {
         },
       ),
 
-      // Botón flotante
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _irARegistro,
-        backgroundColor: PetPage.primario,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Agregar'),
+      // Botón flotante con degradado
+      floatingActionButton: PresionAnimada(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              colors: [PetPage.primarioClaro, PetPage.primario],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: PetPage.primario.withValues(alpha: 0.35),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: _irARegistro,
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            highlightElevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text(
+              'Agregar',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
       ),
 
       floatingActionButtonLocation:
           FloatingActionButtonLocation.endFloat,
     );
   }
-    
+
   Widget _contenido() {
     if (_cargando) {
-      return const Center(
-        child: CircularProgressIndicator(color: PetPage.primario),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: PetPage.primario.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(18),
+              child: const CircularProgressIndicator(
+                color: PetPage.primario,
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Buscando a tus mascotas...',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: PetPage.tintaSuave,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -151,14 +224,24 @@ class _PetPageState extends State<PetPage> {
     return RefreshIndicator(
       color: PetPage.primario,
       onRefresh: _cargarMascotas,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 0.82,
+        ),
         itemCount: _mascotas.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 14),
-        itemBuilder: (_, i) => _TarjetaMascota(
-          mascota: _mascotas[i],
-          onRegresar: _cargarMascotas,
+        itemBuilder: (_, i) => EntradaAnimada(
+          indice: i,
+          child: _TarjetaMascota(
+            mascota: _mascotas[i],
+            onRegresar: _cargarMascotas,
+          ),
         ),
       ),
     );
@@ -168,8 +251,9 @@ class _PetPageState extends State<PetPage> {
     backgroundColor: PetPage.primario,
     foregroundColor: Colors.white,
     elevation: 0,
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
   );
 
   Widget _mensajeCentral({
@@ -179,38 +263,71 @@ class _PetPageState extends State<PetPage> {
     required Widget accion,
   }) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icono,
-              size: 72,
-              color: PetPage.primario.withValues(alpha: 0.65),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              titulo,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: PetPage.tinta,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
+        child: EntradaAnimada(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.6, end: 1),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.elasticOut,
+                builder: (_, escala, child) =>
+                    Transform.scale(scale: escala, child: child),
+                child: Container(
+                  width: 132,
+                  height: 132,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white,
+                        PetPage.primarioPastel,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: PetPage.primario.withValues(alpha: 0.16),
+                        blurRadius: 30,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icono,
+                    size: 60,
+                    color: PetPage.primario.withValues(alpha: 0.8),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              detalle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: PetPage.tintaSuave,
+              const SizedBox(height: 24),
+              Text(
+                titulo,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  color: PetPage.tinta,
+                  letterSpacing: -0.3,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            accion,
-          ],
+              const SizedBox(height: 8),
+              Text(
+                detalle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: PetPage.tintaSuave,
+                ),
+              ),
+              const SizedBox(height: 26),
+              accion,
+            ],
+          ),
         ),
       ),
     );
@@ -230,70 +347,99 @@ class _TarjetaMascota extends StatelessWidget {
     final emoji =
         mascota.especie.toLowerCase() == 'gato' ? '🐱' : '🐶';
 
-    return InkWell(
-      onTap: () async{
-        final resultado = await Navigator.pushNamed(
-          context,
-          AppRoutes.petProfile,
-          arguments: mascota.id,
-        );
-        if (resultado == true){
-          await onRegresar();
-        }
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x140F3D3A),
-              blurRadius: 20,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 36,
-              backgroundColor: const Color(0xFFE0F3F1),
-              backgroundImage:
-                  foto != null ? NetworkImage(foto) : null,
-              onBackgroundImageError:
-                  foto != null ? (_, _) {} : null,
-              child: foto == null
-                  ? Text(
-                      emoji,
-                      style: const TextStyle(fontSize: 32),
-                    )
-                  : null,
-            ),
+    final sinFoto = Container(
+      color: PetPage.primarioPastel,
+      alignment: Alignment.center,
+      child: Text(emoji, style: const TextStyle(fontSize: 56)),
+    );
 
-            const SizedBox(width: 16),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    mascota.nombrePet,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: PetPage.tinta,
+    return PresionAnimada(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: () async{
+            final resultado = await Navigator.pushNamed(
+              context,
+              AppRoutes.petProfile,
+              arguments: mascota.id,
+            );
+            if (resultado == true){
+              await onRegresar();
+            }
+          },
+          borderRadius: BorderRadius.circular(24),
+          splashColor: PetPage.primario.withValues(alpha: 0.08),
+          highlightColor: PetPage.primario.withValues(alpha: 0.04),
+          child: Ink(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x140F3D3A),
+                  blurRadius: 22,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Hero(
+                      tag: 'mascota-foto-${mascota.id}',
+                      child: SizedBox.expand(
+                        child: foto != null
+                            ? Image.network(
+                                foto,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progreso) {
+                                  if (progreso == null) return child;
+                                  return Container(
+                                    color: PetPage.primarioPastel,
+                                    alignment: Alignment.center,
+                                    child: const SizedBox(
+                                      width: 26,
+                                      height: 26,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: PetPage.primario,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (_, _, _) => sinFoto,
+                              )
+                            : sinFoto,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    mascota.nombrePet,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: PetPage.tinta,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
-
 }

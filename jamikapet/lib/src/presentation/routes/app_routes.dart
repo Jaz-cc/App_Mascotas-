@@ -39,7 +39,9 @@ class AppRoutes {
     home: (context) => const HomePage(),
     pets: (context) => const PetPage(),
     petProfile: (context) {
-      final mascotaId = ModalRoute.of(context)!.settings.arguments as int;
+      // Puede llegar sin argumento (por ejemplo, al recargar la app en esta ruta)
+      final argumento = ModalRoute.of(context)?.settings.arguments;
+      final mascotaId = argumento is int ? argumento : null;
 
       return PetProfilePage(
         mascotaId: mascotaId,
