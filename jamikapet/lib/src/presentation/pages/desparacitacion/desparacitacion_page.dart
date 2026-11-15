@@ -18,8 +18,8 @@ class DewormingPage extends StatefulWidget {
 class _DewormingPageState extends State<DewormingPage> {
   List<Mascota> _mascotas = [];
   Mascota? _mascotaSeleccionada;
-  List<Desparasitacion> _tratamientos = [];        // historial  <- FALTABA
-  List<ProductoDesparasitante> _productos = []; 
+  List<Desparasitacion> _tratamientos = []; // historial
+  List<ProductoDesparasitante> _productos = [];
   bool _cargandoMascotas = true;
   bool _cargandoTratamientos = false;
   String? _error;
@@ -32,7 +32,11 @@ class _DewormingPageState extends State<DewormingPage> {
 
   void _snack(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensaje)),
+      SnackBar(
+        content: Text(mensaje),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
     );
   }
 
@@ -91,6 +95,7 @@ class _DewormingPageState extends State<DewormingPage> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text('Eliminar desparasitación'),
         content: Text(
           '¿Deseas eliminar "${tratamiento.producto}" del historial de '
@@ -136,7 +141,6 @@ class _DewormingPageState extends State<DewormingPage> {
     });
 
     try {
-      
       final resultados = await Future.wait([
         PetsService.obtenerMascotas(),
         DesparasitacionService.obtenerProductos(),
@@ -208,130 +212,308 @@ class _DewormingPageState extends State<DewormingPage> {
   List<Desparasitacion> get _tratamientosFiltrados => _tratamientos;
 
   Desparasitacion? get _proximoTratamiento {
-    final pendientes =
-        _tratamientosFiltrados
-            .where(
-              (tratamiento) =>
-                  tratamiento.estado.toLowerCase() == 'pendiente' &&
-                  tratamiento.proximaDosis != null,
-            )
-            .toList()
-          ..sort((a, b) => a.proximaDosis!.compareTo(b.proximaDosis!));
+    final pendientes = _tratamientosFiltrados
+        .where(
+          (tratamiento) =>
+              tratamiento.estado.toLowerCase() == 'pendiente' &&
+              tratamiento.proximaDosis != null,
+        )
+        .toList()
+      ..sort((a, b) => a.proximaDosis!.compareTo(b.proximaDosis!));
     if (pendientes.isNotEmpty) return pendientes.first;
 
     final hoy = DateTime.now();
-    final proximos =
-        _tratamientosFiltrados
-            .where(
-              (tratamiento) =>
-                  tratamiento.proximaDosis != null &&
-                  !tratamiento.proximaDosis!.isBefore(
-                    DateTime(hoy.year, hoy.month, hoy.day),
-                  ),
-            )
-            .toList()
-          ..sort((a, b) => a.proximaDosis!.compareTo(b.proximaDosis!));
+    final proximos = _tratamientosFiltrados
+        .where(
+          (tratamiento) =>
+              tratamiento.proximaDosis != null &&
+              !tratamiento.proximaDosis!.isBefore(
+                DateTime(hoy.year, hoy.month, hoy.day),
+              ),
+        )
+        .toList()
+      ..sort((a, b) => a.proximaDosis!.compareTo(b.proximaDosis!));
     return proximos.isEmpty ? null : proximos.first;
   }
 
+  // ===============================================================
+  // BUILD
+  // ===============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _Paleta.fondo,
-
       appBar: const HeaderAppBar(
         titulo: 'Desparasitación',
         mostrarLogo: true,
         mostrarRegreso: true,
         mostrarNotificaciones: true,
       ),
-      body: Column(
-        children: [
-          // Contenido de la pantalla
-          Expanded(
-            child: SafeArea(
-              child: RefreshIndicator(
-                color: _Paleta.primarioOscuro,
-                onRefresh: _cargarInicial,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _tarjetaEncabezado(),
-                      const SizedBox(height: 18),
-                      if (_cargandoMascotas)
-                        _estadoCargando()
-                      else if (_mascotas.isEmpty)
-                        _error != null
-                            ? _estadoError(
-                                'No pudimos cargar tus mascotas.',
-                                _cargarInicial,
-                              )
-                            : _estadoMascotasVacio()
-                      else ...[
-                        _selectorMascotas(),
+      body: Container(
+        // Fondo con degradado suave para dar profundidad
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_Paleta.fondo, Color(0xFFF3FBFA)],
+          ),
+        ),
+        child: Column(
+          children: [
+            // Contenido de la pantalla
+            Expanded(
+              child: SafeArea(
+                child: RefreshIndicator(
+                  color: _Paleta.primarioOscuro,
+                  onRefresh: _cargarInicial,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _encabezadoLogo(),
                         const SizedBox(height: 18),
-                        if (_error != null)
-                          _estadoError(
-                            'No pudimos cargar los tratamientos.',
-                            _cargarTratamientos,
-                          )
+                        _tarjetaEncabezado(),
+                        const SizedBox(height: 20),
+                        if (_cargandoMascotas)
+                          _estadoCargando()
+                        else if (_mascotas.isEmpty)
+                          _error != null
+                              ? _estadoError(
+                                  'No pudimos cargar tus mascotas.',
+                                  _cargarInicial,
+                                )
+                              : _estadoMascotasVacio()
                         else ...[
-                          if (_proximoTratamiento != null)
-                            _tarjetaProximaDosis(),
-                          const SizedBox(height: 22),
-                          const Text(
-                            'Historial de tratamientos',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: _Paleta.tinta,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          if (_cargandoTratamientos)
-                            _estadoCargando()
-                          else if (_tratamientosFiltrados.isEmpty)
-                            _estadoVacio()
-                          else
-                            ..._tratamientosFiltrados.map(_tarjetaTratamiento),
-                          const SizedBox(height: 6),
-                          _botonRegistrar(),
+                          _selectorMascotas(),
+                          const SizedBox(height: 20),
+                          if (_error != null)
+                            _estadoError(
+                              'No pudimos cargar los tratamientos.',
+                              _cargarTratamientos,
+                            )
+                          else ...[
+                            if (_proximoTratamiento != null)
+                              _tarjetaProximaDosis(),
+                            const SizedBox(height: 24),
+                            _tituloSeccion('Historial de tratamientos'),
+                            const SizedBox(height: 14),
+                            if (_cargandoTratamientos)
+                              _estadoCargando()
+                            else if (_tratamientosFiltrados.isEmpty)
+                              _estadoVacio()
+                            else
+                              for (int i = 0;
+                                  i < _tratamientosFiltrados.length;
+                                  i++)
+                                _aparecer(
+                                  i,
+                                  _tarjetaTratamiento(_tratamientosFiltrados[i]),
+                                ),
+                            const SizedBox(height: 8),
+                            _botonRegistrar(),
+                          ],
                         ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
+
+            // ===============================================================
+            // PIE DE PÁGINA / BARRA INFERIOR
+            // ===============================================================
+            AppBottomNavigation(
+              currentIndex: 1,
+              onItemSelected: (index) {
+                switch (index) {
+                  case 0:
+                    Navigator.pushNamed(context, AppRoutes.home);
+                    break;
+
+                  case 1:
+                    Navigator.pushNamed(context, AppRoutes.menu);
+                    break;
+
+                  case 2:
+                    Navigator.pushNamed(context, AppRoutes.pets);
+                    break;
+
+                  case 3:
+                    Navigator.pushNamed(context, AppRoutes.perfil);
+                    break;
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Animación de entrada escalonada (fade + sube un poco)
+  Widget _aparecer(int indice, Widget hijo) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('${_mascotaSeleccionada?.id}-$indice'),
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 350 + (indice.clamp(0, 6) * 70)),
+      curve: Curves.easeOutCubic,
+      builder: (context, valor, child) => Opacity(
+        opacity: valor,
+        child: Transform.translate(
+          offset: Offset(0, (1 - valor) * 16),
+          child: child,
+        ),
+      ),
+      child: hijo,
+    );
+  }
+
+  Widget _tituloSeccion(String texto) {
+    return Row(
+      children: [
+        Container(
+          width: 5,
+          height: 22,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_Paleta.primario, _Paleta.primarioOscuro],
+            ),
           ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          texto,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: _Paleta.tinta,
+          ),
+        ),
+      ],
+    );
+  }
 
-          // ===============================================================
-          // PIE DE PÁGINA / BARRA INFERIOR
-          // ===============================================================
-          AppBottomNavigation(
-            currentIndex: 1,
-            onItemSelected: (index) {
-              switch (index) {
-                case 0:
-                  Navigator.pushNamed(context, AppRoutes.home);
-                  break;
-
-                case 1:
-                  Navigator.pushNamed(context, AppRoutes.menu);
-                  break;
-
-                case 2:
-                  Navigator.pushNamed(context, AppRoutes.pets);
-                  break;
-
-                case 3:
-                  Navigator.pushNamed(context, AppRoutes.perfil);
-                  break;
-              }
-            },
+  // ===============================================================
+  // BANNER CON LA MASCOTA ANIMADA
+  // ===============================================================
+  Widget _encabezadoLogo() {
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_Paleta.primario, _Paleta.primarioOscuro],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x401F7A70),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Huellas decorativas
+          Positioned(
+            top: -14,
+            right: -10,
+            child: Transform.rotate(
+              angle: 0.35,
+              child: Icon(
+                Icons.pets,
+                size: 96,
+                color: Colors.white.withValues(alpha: 0.14),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -20,
+            left: -12,
+            child: Transform.rotate(
+              angle: -0.4,
+              child: Icon(
+                Icons.pets,
+                size: 70,
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      width: 3,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 12,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  // Mascota animada
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/img/mascota_anim.gif',
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      // Si el archivo no existe o falla, muestra el corazón
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.favorite_rounded,
+                        color: _Paleta.primarioOscuro,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mi Mascota',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Bitácora de salud y cuidado',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xE6FFFFFF),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -344,32 +526,43 @@ class _DewormingPageState extends State<DewormingPage> {
   Widget _tarjetaEncabezado() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x140F3D3A),
-            blurRadius: 16,
-            offset: Offset(0, 6),
+            color: Color(0x1F0F3D3A),
+            blurRadius: 22,
+            offset: Offset(0, 10),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 56,
+            height: 56,
             decoration: const BoxDecoration(
-              color: _Paleta.verdeMuyClaro,
               shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [_Paleta.verdeClaro, _Paleta.primario],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x4055C8BD),
+                  blurRadius: 12,
+                  offset: Offset(0, 5),
+                ),
+              ],
             ),
             child: const Icon(
               Icons.health_and_safety_outlined,
-              color: _Paleta.primarioOscuro,
-              size: 27,
+              color: Colors.white,
+              size: 28,
             ),
           ),
           const SizedBox(width: 14),
@@ -417,50 +610,77 @@ class _DewormingPageState extends State<DewormingPage> {
             color: _Paleta.tinta,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 10,
-          runSpacing: 10,
+          runSpacing: 12,
           children: _mascotas.map((mascota) {
             final seleccionada = mascota.id == _mascotaSeleccionada?.id;
             return Semantics(
               button: true,
               selected: seleccionada,
               label: 'Ver tratamientos de ${mascota.nombrePet}',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(22),
-                onTap: () => _seleccionarMascota(mascota),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 9,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  gradient: seleccionada
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [_Paleta.primario, _Paleta.primarioOscuro],
+                        )
+                      : null,
+                  color: seleccionada ? null : Colors.white,
+                  border: Border.all(
+                    color: seleccionada ? Colors.transparent : _Paleta.borde,
                   ),
-                  decoration: BoxDecoration(
-                    color: seleccionada ? _Paleta.verdeMuyClaro : Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
+                  boxShadow: [
+                    BoxShadow(
                       color: seleccionada
-                          ? _Paleta.primarioOscuro
-                          : _Paleta.borde,
-                      width: seleccionada ? 1.6 : 1,
+                          ? const Color(0x551F7A70)
+                          : const Color(0x0F0F3D3A),
+                      blurRadius: seleccionada ? 14 : 8,
+                      offset: Offset(0, seleccionada ? 6 : 3),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.pets, size: 15, color: _Paleta.primarioOscuro),
-                      const SizedBox(width: 6),
-                      Text(
-                        mascota.nombrePet,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: seleccionada
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: _Paleta.tinta,
-                        ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(26),
+                    onTap: () => _seleccionarMascota(mascota),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.pets,
+                            size: 16,
+                            color: seleccionada
+                                ? Colors.white
+                                : _Paleta.primarioOscuro,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            mascota.nombrePet,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: seleccionada
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                              color:
+                                  seleccionada ? Colors.white : _Paleta.tinta,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -482,78 +702,120 @@ class _DewormingPageState extends State<DewormingPage> {
           '${_formatearFecha(tratamiento.proximaDosis)}',
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(14),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.white, Color(0xFFEAF8F6)],
+          ),
           border: Border.all(color: _Paleta.borde),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x0F0F3D3A),
-              blurRadius: 12,
-              offset: Offset(0, 4),
+              color: Color(0x1A0F3D3A),
+              blurRadius: 18,
+              offset: Offset(0, 8),
             ),
           ],
         ),
-        child: Row(
+        child: Stack(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: _Paleta.verdeMuyClaro,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.calendar_month_outlined,
-                color: _Paleta.primarioOscuro,
-                size: 25,
+            // Marca de agua decorativa
+            Positioned(
+              right: -16,
+              bottom: -18,
+              child: Icon(
+                Icons.calendar_month_rounded,
+                size: 88,
+                color: _Paleta.primario.withValues(alpha: 0.10),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  const Text(
-                    'Próxima desparasitación',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: _Paleta.tinta,
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [_Paleta.primario, _Paleta.primarioOscuro],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x4D1F7A70),
+                          blurRadius: 12,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.calendar_month_outlined,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    _formatearFecha(tratamiento.proximaDosis),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: _Paleta.tintaSuave,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Próxima desparasitación',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: _Paleta.tintaSuave,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _formatearFecha(tratamiento.proximaDosis),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: _Paleta.tinta,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Semantics(
+                    button: true,
+                    label: 'Recordarme esta fecha',
+                    child: Material(
+                      color: _Paleta.verdeMuyClaro,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  const Text('Te avisaremos antes de esta fecha'),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            color: _Paleta.primarioOscuro,
+                            size: 24,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'Recordarme esta fecha',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Te avisaremos antes de esta fecha'),
-                    ),
-                  );
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    color: _Paleta.primarioOscuro,
-                    size: 24,
-                  ),
-                ),
               ),
             ),
           ],
@@ -562,123 +824,108 @@ class _DewormingPageState extends State<DewormingPage> {
     );
   }
 
+  // ===============================================================
+  // ESTADOS (cargando / error / vacío)
+  // ===============================================================
   Widget _estadoCargando() {
     return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 32),
+      padding: EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: CircularProgressIndicator(color: _Paleta.primarioOscuro),
       ),
     );
   }
 
-  Widget _estadoError(String titulo, Future<void> Function() reintentar) {
+  Widget _mensajeCard({
+    required IconData icono,
+    required String titulo,
+    String? detalle,
+    Widget? accion,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x140F3D3A),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.cloud_off_rounded,
-            size: 38,
-            color: _Paleta.tintaSuave,
+          Container(
+            width: 70,
+            height: 70,
+            decoration: const BoxDecoration(
+              color: _Paleta.verdeMuyClaro,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icono, size: 34, color: _Paleta.primarioOscuro),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
           Text(
             titulo,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
               color: _Paleta.tinta,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            _error!,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
-          ),
-          TextButton.icon(
-            onPressed: () => reintentar(),
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Reintentar'),
-          ),
+          if (detalle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              detalle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.35,
+                color: _Paleta.tintaSuave,
+              ),
+            ),
+          ],
+          if (accion != null) ...[
+            const SizedBox(height: 14),
+            accion,
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _estadoError(String titulo, Future<void> Function() reintentar) {
+    return _mensajeCard(
+      icono: Icons.cloud_off_rounded,
+      titulo: titulo,
+      detalle: _error,
+      accion: TextButton.icon(
+        onPressed: () => reintentar(),
+        icon: const Icon(Icons.refresh_rounded),
+        label: const Text('Reintentar'),
       ),
     );
   }
 
   Widget _estadoMascotasVacio() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.pets_rounded, size: 38, color: _Paleta.tintaSuave),
-          SizedBox(height: 10),
-          Text(
-            'Aún no tienes mascotas',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: _Paleta.tinta,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Registra una mascota para consultar sus desparasitaciones.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
-          ),
-        ],
-      ),
+    return _mensajeCard(
+      icono: Icons.pets_rounded,
+      titulo: 'Aún no tienes mascotas',
+      detalle: 'Registra una mascota para consultar sus desparasitaciones.',
     );
   }
 
-  // ===============================================================
-  // ESTADO VACÍO
-  // ===============================================================
   Widget _estadoVacio() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.medication_outlined,
-            size: 38,
-            color: _Paleta.tintaSuave,
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Sin tratamientos registrados',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: _Paleta.tinta,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Registra la primera desparasitación de '
-            '${_mascotaSeleccionada?.nombrePet ?? 'tu mascota'}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
-          ),
-        ],
-      ),
+    return _mensajeCard(
+      icono: Icons.medication_outlined,
+      titulo: 'Sin tratamientos registrados',
+      detalle:
+          'Registra la primera desparasitación de '
+          '${_mascotaSeleccionada?.nombrePet ?? 'tu mascota'}',
     );
   }
 
@@ -688,164 +935,228 @@ class _DewormingPageState extends State<DewormingPage> {
   Widget _tarjetaTratamiento(Desparasitacion tratamiento) {
     final pendiente = tratamiento.estado.toLowerCase() == 'pendiente';
     final colorEstado = pendiente ? _Paleta.pendiente : _Paleta.aplicada;
-    final iconoEstado = pendiente
-        ? Icons.schedule_rounded
-        : Icons.check_rounded;
+    final iconoEstado =
+        pendiente ? Icons.schedule_rounded : Icons.check_rounded;
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0F0F3D3A),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Color(0x1A0F3D3A),
+            blurRadius: 18,
+            offset: Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: const BoxDecoration(
-                  color: _Paleta.verdeMuyClaro,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.medication_outlined,
-                  color: _Paleta.primarioOscuro,
-                  size: 22,
-                ),
-              ),
-                            
-              const SizedBox(width: 10),
-
-              Expanded(
-                child: Text(
-                  tratamiento.producto,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    color: _Paleta.tinta,
-                  ),
-                ),
-              ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: colorEstado.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(iconoEstado, size: 12, color: colorEstado),
-                    const SizedBox(width: 3),
-                    Text(
-                      tratamiento.estado,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: colorEstado,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(width: 4),
-              
-              Semantics(
-                button: true,
-                label: 'Editar tratamiento',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _abrirModalEditar(tratamiento),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.edit_outlined,
-                      size: 20,
-                      color: _Paleta.primarioOscuro,
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(width: 2),
-              
-              Semantics(
-                button: true,
-                label: 'Eliminar tratamiento',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _eliminarTratamiento(tratamiento),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-         
-          const SizedBox(height: 10),
-          
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: _Paleta.campo,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          color: Colors.white,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _filaFecha(
-                  'Fecha de aplicación',
-                  _formatearFecha(tratamiento.fechaAplicacion),
+                // Franja lateral con el color del estado
+                Container(
+                  width: 6,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colorEstado.withValues(alpha: 0.65),
+                        colorEstado,
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 6),
-                _filaFecha(
-                  'Próxima dosis',
-                  _formatearFecha(tratamiento.proximaDosis),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    _Paleta.verdeMuyClaro,
+                                    _Paleta.verdeClaro.withValues(alpha: 0.7),
+                                  ],
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.medication_outlined,
+                                color: _Paleta.primarioOscuro,
+                                size: 23,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tratamiento.producto,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        color: _Paleta.tinta,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            colorEstado.withValues(alpha: 0.12),
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            iconoEstado,
+                                            size: 13,
+                                            color: colorEstado,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            tratamiento.estado,
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: colorEstado,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _botonAccion(
+                              etiqueta: 'Editar tratamiento',
+                              icono: Icons.edit_outlined,
+                              color: _Paleta.primarioOscuro,
+                              fondo: _Paleta.verdeMuyClaro,
+                              onTap: () => _abrirModalEditar(tratamiento),
+                            ),
+                            const SizedBox(width: 6),
+                            _botonAccion(
+                              etiqueta: 'Eliminar tratamiento',
+                              icono: Icons.delete_outline,
+                              color: Colors.red,
+                              fondo: const Color(0xFFFDECEC),
+                              onTap: () => _eliminarTratamiento(tratamiento),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _Paleta.campo,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: _Paleta.borde),
+                          ),
+                          child: Column(
+                            children: [
+                              _filaFecha(
+                                Icons.event_available_rounded,
+                                'Fecha de aplicación',
+                                _formatearFecha(tratamiento.fechaAplicacion),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: Divider(height: 1, color: _Paleta.borde),
+                              ),
+                              _filaFecha(
+                                Icons.event_repeat_rounded,
+                                'Próxima dosis',
+                                _formatearFecha(tratamiento.proximaDosis),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _filaFecha(String titulo, String fecha) {
+  // Botón circular de acción (editar / eliminar)
+  Widget _botonAccion({
+    required String etiqueta,
+    required IconData icono,
+    required Color color,
+    required Color fondo,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      label: etiqueta,
+      child: Material(
+        color: fondo,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icono, size: 19, color: color),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _filaFecha(IconData icono, String titulo, String fecha) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Icon(icono, size: 16, color: _Paleta.primarioOscuro),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             titulo,
-            style: const TextStyle(fontSize: 12, color: _Paleta.tintaSuave),
+            style: const TextStyle(fontSize: 12.5, color: _Paleta.tintaSuave),
           ),
         ),
         Text(
           fecha,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 12.5,
             color: _Paleta.tinta,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -854,31 +1165,51 @@ class _DewormingPageState extends State<DewormingPage> {
 
   // ===============================================================
   // BOTÓN REGISTRAR
+  // ===============================================================
   Widget _botonRegistrar() {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 52,
-      child: ElevatedButton.icon(
-        onPressed: _abrirModalRegistrar,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'Registrar desparasitación',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+      height: 54,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_Paleta.primario, _Paleta.primarioOscuro],
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _Paleta.primario,
-          foregroundColor: _Paleta.tinta,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x551F7A70),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: _abrirModalRegistrar,
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_rounded, color: Colors.white, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'Registrar desparasitación',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15.5,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // ===============================================================
-  // FORMULARIO (DIÁLOGO)
   String _formatearFecha(DateTime? fecha) {
     if (fecha == null) return 'Pendiente';
     return '${fecha.day.toString().padLeft(2, '0')} - '
@@ -893,6 +1224,7 @@ class _Paleta {
   static const fondo = Color(0xFFE1F5F2);
   static const primario = Color(0xFF55C8BD);
   static const primarioOscuro = Color(0xFF1F7A70);
+  static const verdeClaro = Color(0xFFA9DDD8);
   static const verdeMuyClaro = Color(0xFFD1F0EE);
   static const campo = Color(0xFFF4FBFA);
   static const borde = Color(0xFFCBE5E2);

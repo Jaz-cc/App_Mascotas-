@@ -207,11 +207,17 @@ class RegisterBlocCubit {
   }
 
   String? _validatePhone(String value) {
-    if (value.isEmpty) {
-      return 'El teléfono es obligatorio';
-    }
-    return null;
+  if (value.isEmpty) {
+    return 'El teléfono es obligatorio';
   }
+
+  final digitos = value.replaceAll(RegExp(r'\D'), '');
+  if (digitos.length != 10) {
+    return 'El teléfono debe tener 10 dígitos';
+  }
+
+  return null;
+}
 
   // ============================================================
   // VALIDAR CONTRASEÑA

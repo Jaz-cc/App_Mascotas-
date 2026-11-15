@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:jamikapet/src/presentation/routes/app_routes.dart';
 import 'package:jamikapet/src/presentation/pages/auth/register/register_bloc_cubit.dart';
 import 'package:jamikapet/src/presentation/widgets/app_text_field.dart';
@@ -17,16 +16,14 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // =========================================================
+  static const Color _backgroundColor = Color(0xFFE0F6F6);
+  static const Color _accentColor = Color(0xFF00897B);
+  static const Color _errorColor = Color(0xFFD32F2F);
+
   // BLOC
-  // =========================================================
   final RegisterBlocCubit bloc = RegisterBlocCubit();
 
-  StreamSubscription<bool>? formSubscription;
-
-  // =========================================================
   // CONTROLADORES
-  // =========================================================
   final nombreController = TextEditingController();
   final apellidoController = TextEditingController();
   final emailController = TextEditingController();
@@ -34,68 +31,90 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   final confirmarPasswordController = TextEditingController();
 
-  // =========================================================
   // VARIABLES
-  // =========================================================
   bool aceptarTerminos = false;
-  bool formularioValido = false;
   bool isLoading = false;
 
-  // =========================================================
-  // INIT STATE
-  // =========================================================
-  @override
-  void initState() {
-    super.initState();
+  // Se pone en true cuando el usuario presiona "Registrarse":
+  // desde ese momento se muestran TODOS los errores.
+  bool _intentoRegistrar = false;
 
-    formSubscription = bloc.validateForm.listen((valid) {
-      if (!mounted) return;
+  // Campos que el usuario ya tocó
+  final Set<String> _tocados = {};
 
-      setState(() {
-        formularioValido = valid;
-      });
-    });
+  // =========================================================
+  // VALIDACIONES POR CAMPO (null = el campo está bien)
+  // =========================================================
+  String? get _errorNombre =>
+      nombreController.text.trim().isEmpty ? 'Ingresa tu nombre' : null;
+
+  String? get _errorApellido =>
+      apellidoController.text.trim().isEmpty ? 'Ingresa tu apellido' : null;
+
+  String? get _errorTelefono {
+    final texto = phoneController.text.trim();
+    if (texto.isEmpty) return 'Ingresa tu teléfono';
+    final digitos = texto.replaceAll(RegExp(r'\D'), '');
+    if (digitos.length != 10) return 'El teléfono debe tener 10 dígitos';
+    return null;
   }
 
-  // =========================================================
+  String? get _errorEmail {
+    final texto = emailController.text.trim();
+    if (texto.isEmpty) return 'Ingresa tu e-mail';
+    final valido = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        .hasMatch(texto);
+    if (!valido) return 'Escribe un e-mail válido (ej. nombre@correo.com)';
+    return null;
+  }
+
+  String? get _errorPassword {
+    final texto = passwordController.text;
+    if (texto.isEmpty) return 'Ingresa una contraseña';
+    if (texto.length < 8) return 'Debe tener al menos 8 caracteres';
+    return null;
+  }
+
+  String? get _errorConfirmar {
+    final texto = confirmarPasswordController.text;
+    if (texto.isEmpty) return 'Confirma tu contraseña';
+    if (texto != passwordController.text) {
+      return 'Las contraseñas no coinciden';
+    }
+    return null;
+  }
+
+  String? get _errorTerminos =>
+      aceptarTerminos ? null : 'Debes aceptar los términos y condiciones';
+
+  bool get _hayErrores =>
+      _errorNombre != null ||
+      _errorApellido != null ||
+      _errorTelefono != null ||
+      _errorEmail != null ||
+      _errorPassword != null ||
+      _errorConfirmar != null ||
+      _errorTerminos != null;
+
   // REGISTRO
-  // =========================================================
   Future<void> registrarUsuario() async {
-    // ---------------------------------------------------------
-    // TÉRMINOS Y CONDICIONES
-    // ---------------------------------------------------------
-    if (!aceptarTerminos) {
-      Fluttertoast.showToast(
-        msg: 'Debes aceptar los términos y condiciones',
-        toastLength: Toast.LENGTH_LONG,
-      );
+    FocusScope.of(context).unfocus();
 
-      return;
-    }
+    if (isLoading) return;
 
-    // ---------------------------------------------------------
-    // VALIDACIÓN DEL FORMULARIO
-    // ---------------------------------------------------------
-    if (!formularioValido) {
-      Fluttertoast.showToast(
-        msg: 'Verifica los datos ingresados',
-        toastLength: Toast.LENGTH_LONG,
-      );
+    // Activa la visualización de todos los errores
+    setState(() {
+      _intentoRegistrar = true;
+    });
 
-      return;
-    }
+    // No se registra si falta algo o si no aceptó los términos
+    if (_hayErrores) return;
 
-    // ---------------------------------------------------------
-    // CARGANDO
-    // ---------------------------------------------------------
     setState(() {
       isLoading = true;
     });
 
     try {
-      // -------------------------------------------------------
-      // REGISTRO EN EL BLOC
-      // -------------------------------------------------------
       await bloc.register();
 
       if (!mounted) return;
@@ -105,9 +124,6 @@ class _RegisterPageState extends State<RegisterPage> {
         toastLength: Toast.LENGTH_LONG,
       );
 
-      // -------------------------------------------------------
-      // POSTERIORMENTE: Navegar al Login
-      // -------------------------------------------------------
       Navigator.pushReplacementNamed(context, AppRoutes.login);
     } catch (e) {
       if (!mounted) return;
@@ -122,12 +138,8 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  // =========================================================
-  // DISPOSE
-  // =========================================================
   @override
   void dispose() {
-    formSubscription?.cancel();
     nombreController.dispose();
     apellidoController.dispose();
     emailController.dispose();
@@ -139,233 +151,307 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // =========================================================
-  // BUILD
+  // AYUDAS DE DISEÑO
   // =========================================================
+
+  // Marca el campo como tocado y refresca los mensajes
+  void _tocar(String campo) {
+    setState(() {
+      _tocados.add(campo);
+    });
+  }
+
+  // Mensaje de error en rojo
+  Widget _mensajeError(String texto) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 14, top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, size: 15, color: _errorColor),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              texto,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: _errorColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Campo + error debajo (si ya lo tocó o si intentó registrarse)
+  Widget _campo(String campo, String? error, Widget child) {
+    final mostrarError =
+        (_tocados.contains(campo) || _intentoRegistrar) && error != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        child,
+        if (mostrarError) _mensajeError(error),
+      ],
+    );
+  }
+
+  // Dos campos en fila (pantallas anchas) o apilados (móvil)
+  Widget _pair(bool wide, Widget first, Widget second) {
+    if (wide) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: first),
+          const SizedBox(width: 14),
+          Expanded(child: second),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        first,
+        const SizedBox(height: 16),
+        second,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE0F6F6),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            // =================================================
-            // RESPONSIVIDAD
-            // =================================================
-            final double screenWidth = constraints.maxWidth;
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool wide = constraints.maxWidth >= 700;
 
-            return SingleChildScrollView(
-              child: Center(
-                child: Container(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-
+              return SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 48,
+                  ),
                   child: Center(
-                    child: SizedBox(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 750),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 25),
-                          // ===================================
-                          // TÍTULO
-                          // ===================================
+                          const AppLogo(width: 120, height: 120),
+                          const SizedBox(height: 16),
                           const Text(
                             'REGISTRO DE USUARIO',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 27,
+                              fontSize: 26,
                               fontWeight: FontWeight.w900,
-                              color: Colors.black,
+                              color: Colors.black87,
+                              letterSpacing: 0.5,
                             ),
                           ),
+                          const SizedBox(height: 24),
 
-                          const SizedBox(height: 25),
-
-                          // ===================================
-                          // LOGO
-                          // ===================================
-                          const AppLogo(width: 150, height: 150),
-
-                          const SizedBox(height: 25),
-
-                          // ===================================
-                          // NOMBRE + APELLIDO
-                          // ===================================
-                          if (screenWidth >= 700)
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: AppTextField(
-                                    label: 'Nombre:',
-                                    icon: Icons.account_circle_outlined,
-                                    textCapitalization:
-                                        TextCapitalization.words,
-                                    controller: nombreController,
-                                    onChanged: bloc.changeName,
-                                  ),
-                                ),
-
-                                const SizedBox(width: 14),
-
-                                Expanded(
-                                  child: AppTextField(
-                                    label: 'Apellido:',
-                                    icon: Icons.abc_outlined,
-                                    textCapitalization:
-                                        TextCapitalization.words,
-                                    controller: apellidoController,
-                                    onChanged: bloc.changeLastname,
-                                  ),
-                                ),
-                              ],
-                            )
-                          else
-                            Column(
-                              children: [
-                                AppTextField(
-                                  label: 'Nombre:',
-                                  icon: Icons.account_circle_outlined,
-                                  textCapitalization: TextCapitalization.words,
-                                  controller: nombreController,
-                                  onChanged: bloc.changeName,
-                                ),
-
-                                const SizedBox(height: 14),
-
-                                AppTextField(
-                                  label: 'Apellido:',
-                                  icon: Icons.abc_outlined,
-                                  textCapitalization: TextCapitalization.words,
-                                  controller: apellidoController,
-                                  onChanged: bloc.changeLastname,
+                          // TARJETA CON EL FORMULARIO
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
-
-                          const SizedBox(height: 14),
-
-                          // ===================================
-                          // TELÉFONO
-                          // ===================================
-                          AppTextField(
-                            label: 'Teléfono:',
-                            icon: Icons.phone_outlined,
-                            keyboardType: TextInputType.phone,
-                            controller: phoneController,
-                            onChanged: bloc.changePhone,
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // ===================================
-                          // EMAIL
-                          // ===================================
-                          AppTextField(
-                            label: 'E-mail:',
-                            icon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                            controller: emailController,
-                            onChanged: bloc.changeEmail,
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // ===================================
-                          // CONTRASEÑAS
-                          // ===================================
-                          if (screenWidth >= 700)
-                            Row(
+                            child: Column(
                               children: [
-                                Expanded(
-                                  child: AppPasswordField(
-                                    label: 'Contraseña:',
-                                    controller: passwordController,
-                                    onChanged: bloc.changePassword,
+                                // NOMBRE + APELLIDO
+                                _pair(
+                                  wide,
+                                  _campo(
+                                    'nombre',
+                                    _errorNombre,
+                                    AppTextField(
+                                      label: 'Nombre:',
+                                      icon: Icons.account_circle_outlined,
+                                      textCapitalization:
+                                          TextCapitalization.words,
+                                      controller: nombreController,
+                                      onChanged: (v) {
+                                        bloc.changeName(v);
+                                        _tocar('nombre');
+                                      },
+                                    ),
+                                  ),
+                                  _campo(
+                                    'apellido',
+                                    _errorApellido,
+                                    AppTextField(
+                                      label: 'Apellido:',
+                                      icon: Icons.abc_outlined,
+                                      textCapitalization:
+                                          TextCapitalization.words,
+                                      controller: apellidoController,
+                                      onChanged: (v) {
+                                        bloc.changeLastname(v);
+                                        _tocar('apellido');
+                                      },
+                                    ),
                                   ),
                                 ),
 
-                                const SizedBox(width: 14),
+                                const SizedBox(height: 16),
 
-                                Expanded(
-                                  child: AppPasswordField(
-                                    label: 'Confirmar Contraseña:',
-                                    controller: confirmarPasswordController,
-                                    onChanged: bloc.changeConfirmPassword,
+                                // TELÉFONO
+                                _campo(
+                                  'telefono',
+                                  _errorTelefono,
+                                  AppTextField(
+                                    label: 'Teléfono:',
+                                    icon: Icons.phone_outlined,
+                                    keyboardType: TextInputType.phone,
+                                    controller: phoneController,
+                                    onChanged: (v) {
+                                      bloc.changePhone(v);
+                                      _tocar('telefono');
+                                    },
                                   ),
                                 ),
-                              ],
-                            )
-                          else
-                            Column(
-                              children: [
-                                AppPasswordField(
-                                  label: 'Contraseña:',
-                                  controller: passwordController,
-                                  onChanged: bloc.changePassword,
+
+                                const SizedBox(height: 16),
+
+                                // EMAIL
+                                _campo(
+                                  'email',
+                                  _errorEmail,
+                                  AppTextField(
+                                    label: 'E-mail:',
+                                    icon: Icons.email_outlined,
+                                    keyboardType: TextInputType.emailAddress,
+                                    controller: emailController,
+                                    onChanged: (v) {
+                                      bloc.changeEmail(v);
+                                      _tocar('email');
+                                    },
+                                  ),
                                 ),
 
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 16),
 
-                                AppPasswordField(
-                                  label: 'Confirmar Contraseña:',
-                                  controller: confirmarPasswordController,
-                                  onChanged: bloc.changeConfirmPassword,
+                                // CONTRASEÑAS
+                                _pair(
+                                  wide,
+                                  _campo(
+                                    'password',
+                                    _errorPassword,
+                                    AppPasswordField(
+                                      label: 'Contraseña:',
+                                      controller: passwordController,
+                                      onChanged: (v) {
+                                        bloc.changePassword(v);
+                                        _tocar('password');
+                                      },
+                                    ),
+                                  ),
+                                  _campo(
+                                    'confirmar',
+                                    _errorConfirmar,
+                                    AppPasswordField(
+                                      label: 'Confirmar Contraseña:',
+                                      controller: confirmarPasswordController,
+                                      onChanged: (v) {
+                                        bloc.changeConfirmPassword(v);
+                                        _tocar('confirmar');
+                                      },
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // TÉRMINOS + error en rojo debajo
+                                _campo(
+                                  'terminos',
+                                  _errorTerminos,
+                                  AppTermsCheckbox(
+                                    value: aceptarTerminos,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        aceptarTerminos = value;
+                                        _tocados.add('terminos');
+                                      });
+                                    },
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // BOTÓN REGISTRARSE
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: AppButton(
+                                    text: isLoading
+                                        ? 'Registrando...'
+                                        : 'Registrarse',
+                                    onPressed:
+                                        isLoading ? null : registrarUsuario,
+                                  ),
                                 ),
                               ],
                             ),
-
-                          const SizedBox(height: 18),
-
-                          // ===================================
-                          // TÉRMINOS
-                          // ===================================
-                          AppTermsCheckbox(
-                            value: aceptarTerminos,
-                            onChanged: (value) {
-                              setState(() {
-                                aceptarTerminos = value;
-                              });
-                            },
                           ),
 
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 16),
 
-                          // ===================================
-                          // BOTÓN REGISTRARSE
-                          // ===================================
-                          AppButton(
-                            text: isLoading ? 'Registrando...' : 'Registrarse',
-
-                            onPressed: isLoading || !formularioValido
-                                ? null
-                                : registrarUsuario,
-                          ),
-
-                          const SizedBox(height: 5),
-
-                          // ===================================
                           // INICIAR SESIÓN
-                          // ===================================
                           TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, AppRoutes.login);
-                            },
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.login,
+                                    );
+                                  },
+                            style: TextButton.styleFrom(
+                              foregroundColor: _accentColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                            ),
                             child: const Text(
                               'Iniciar de Sesión',
                               style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
-
-                          const SizedBox(height: 15),
                         ],
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
