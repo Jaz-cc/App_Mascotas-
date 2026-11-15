@@ -11,7 +11,6 @@ import 'package:jamikapet/src/services/ai_service.dart';
 class _C {
   static const fondo = Color(0xFFE8F6F3);
   static const primario = Color(0xFF1F7A70);
-  static const primarioClaro = Color(0xFF55C8BD);
   static const borde = Color(0xFFCBE5E2);
   static const tinta = Color(0xFF16302D);
   static const textoSuave = Color(0xFF5C7A77);
