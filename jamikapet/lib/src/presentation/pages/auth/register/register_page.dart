@@ -17,16 +17,15 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // =========================================================
+  static const Color _backgroundColor = Color(0xFFE0F6F6);
+  static const Color _accentColor = Color(0xFF00897B);
+
   // BLOC
-  // =========================================================
   final RegisterBlocCubit bloc = RegisterBlocCubit();
 
   StreamSubscription<bool>? formSubscription;
 
-  // =========================================================
   // CONTROLADORES
-  // =========================================================
   final nombreController = TextEditingController();
   final apellidoController = TextEditingController();
   final emailController = TextEditingController();
@@ -34,16 +33,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   final confirmarPasswordController = TextEditingController();
 
-  // =========================================================
   // VARIABLES
-  // =========================================================
   bool aceptarTerminos = false;
   bool formularioValido = false;
   bool isLoading = false;
 
-  // =========================================================
-  // INIT STATE
-  // =========================================================
   @override
   void initState() {
     super.initState();
@@ -57,45 +51,31 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
-  // =========================================================
   // REGISTRO
-  // =========================================================
   Future<void> registrarUsuario() async {
-    // ---------------------------------------------------------
-    // TÉRMINOS Y CONDICIONES
-    // ---------------------------------------------------------
+    FocusScope.of(context).unfocus();
+
     if (!aceptarTerminos) {
       Fluttertoast.showToast(
         msg: 'Debes aceptar los términos y condiciones',
         toastLength: Toast.LENGTH_LONG,
       );
-
       return;
     }
 
-    // ---------------------------------------------------------
-    // VALIDACIÓN DEL FORMULARIO
-    // ---------------------------------------------------------
     if (!formularioValido) {
       Fluttertoast.showToast(
         msg: 'Verifica los datos ingresados',
         toastLength: Toast.LENGTH_LONG,
       );
-
       return;
     }
 
-    // ---------------------------------------------------------
-    // CARGANDO
-    // ---------------------------------------------------------
     setState(() {
       isLoading = true;
     });
 
     try {
-      // -------------------------------------------------------
-      // REGISTRO EN EL BLOC
-      // -------------------------------------------------------
       await bloc.register();
 
       if (!mounted) return;
@@ -105,9 +85,6 @@ class _RegisterPageState extends State<RegisterPage> {
         toastLength: Toast.LENGTH_LONG,
       );
 
-      // -------------------------------------------------------
-      // POSTERIORMENTE: Navegar al Login
-      // -------------------------------------------------------
       Navigator.pushReplacementNamed(context, AppRoutes.login);
     } catch (e) {
       if (!mounted) return;
@@ -122,9 +99,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  // =========================================================
-  // DISPOSE
-  // =========================================================
   @override
   void dispose() {
     formSubscription?.cancel();
@@ -138,61 +112,97 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  // =========================================================
-  // BUILD
-  // =========================================================
+  // Muestra dos campos en fila (pantallas anchas) o apilados (móvil)
+  Widget _pair(bool wide, Widget first, Widget second) {
+    if (wide) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: first),
+          const SizedBox(width: 14),
+          Expanded(child: second),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        first,
+        const SizedBox(height: 16),
+        second,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE0F6F6),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            // =================================================
-            // RESPONSIVIDAD
-            // =================================================
-            final double screenWidth = constraints.maxWidth;
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        // Al tocar fuera de los campos se cierra el teclado
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool wide = constraints.maxWidth >= 700;
 
-            return SingleChildScrollView(
-              child: Center(
-                child: Container(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-
+              return SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 48,
+                  ),
                   child: Center(
-                    child: SizedBox(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 750),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 25),
-                          // ===================================
+                          // LOGO
+                          const AppLogo(width: 120, height: 120),
+
+                          const SizedBox(height: 16),
+
                           // TÍTULO
-                          // ===================================
                           const Text(
                             'REGISTRO DE USUARIO',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 27,
+                              fontSize: 26,
                               fontWeight: FontWeight.w900,
-                              color: Colors.black,
+                              color: Colors.black87,
+                              letterSpacing: 0.5,
                             ),
                           ),
 
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 24),
 
-                          // ===================================
-                          // LOGO
-                          // ===================================
-                          const AppLogo(width: 150, height: 150),
-
-                          const SizedBox(height: 25),
-
-                          // ===================================
-                          // NOMBRE + APELLIDO
-                          // ===================================
-                          if (screenWidth >= 700)
-                            Row(
+                          // TARJETA CON EL FORMULARIO
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Column(
                               children: [
-                                Expanded(
-                                  child: AppTextField(
+                                // NOMBRE + APELLIDO
+                                _pair(
+                                  wide,
+                                  AppTextField(
                                     label: 'Nombre:',
                                     icon: Icons.account_circle_outlined,
                                     textCapitalization:
@@ -200,12 +210,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     controller: nombreController,
                                     onChanged: bloc.changeName,
                                   ),
-                                ),
-
-                                const SizedBox(width: 14),
-
-                                Expanded(
-                                  child: AppTextField(
+                                  AppTextField(
                                     label: 'Apellido:',
                                     icon: Icons.abc_outlined,
                                     textCapitalization:
@@ -214,158 +219,112 @@ class _RegisterPageState extends State<RegisterPage> {
                                     onChanged: bloc.changeLastname,
                                   ),
                                 ),
-                              ],
-                            )
-                          else
-                            Column(
-                              children: [
+
+                                const SizedBox(height: 16),
+
+                                // TELÉFONO
                                 AppTextField(
-                                  label: 'Nombre:',
-                                  icon: Icons.account_circle_outlined,
-                                  textCapitalization: TextCapitalization.words,
-                                  controller: nombreController,
-                                  onChanged: bloc.changeName,
+                                  label: 'Teléfono:',
+                                  icon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  controller: phoneController,
+                                  onChanged: bloc.changePhone,
                                 ),
 
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 16),
 
+                                // EMAIL
                                 AppTextField(
-                                  label: 'Apellido:',
-                                  icon: Icons.abc_outlined,
-                                  textCapitalization: TextCapitalization.words,
-                                  controller: apellidoController,
-                                  onChanged: bloc.changeLastname,
+                                  label: 'E-mail:',
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  controller: emailController,
+                                  onChanged: bloc.changeEmail,
                                 ),
-                              ],
-                            ),
 
-                          const SizedBox(height: 14),
+                                const SizedBox(height: 16),
 
-                          // ===================================
-                          // TELÉFONO
-                          // ===================================
-                          AppTextField(
-                            label: 'Teléfono:',
-                            icon: Icons.phone_outlined,
-                            keyboardType: TextInputType.phone,
-                            controller: phoneController,
-                            onChanged: bloc.changePhone,
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // ===================================
-                          // EMAIL
-                          // ===================================
-                          AppTextField(
-                            label: 'E-mail:',
-                            icon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                            controller: emailController,
-                            onChanged: bloc.changeEmail,
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // ===================================
-                          // CONTRASEÑAS
-                          // ===================================
-                          if (screenWidth >= 700)
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: AppPasswordField(
+                                // CONTRASEÑAS
+                                _pair(
+                                  wide,
+                                  AppPasswordField(
                                     label: 'Contraseña:',
                                     controller: passwordController,
                                     onChanged: bloc.changePassword,
                                   ),
-                                ),
-
-                                const SizedBox(width: 14),
-
-                                Expanded(
-                                  child: AppPasswordField(
+                                  AppPasswordField(
                                     label: 'Confirmar Contraseña:',
                                     controller: confirmarPasswordController,
                                     onChanged: bloc.changeConfirmPassword,
                                   ),
                                 ),
-                              ],
-                            )
-                          else
-                            Column(
-                              children: [
-                                AppPasswordField(
-                                  label: 'Contraseña:',
-                                  controller: passwordController,
-                                  onChanged: bloc.changePassword,
+
+                                const SizedBox(height: 20),
+
+                                // TÉRMINOS
+                                AppTermsCheckbox(
+                                  value: aceptarTerminos,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      aceptarTerminos = value;
+                                    });
+                                  },
                                 ),
 
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 20),
 
-                                AppPasswordField(
-                                  label: 'Confirmar Contraseña:',
-                                  controller: confirmarPasswordController,
-                                  onChanged: bloc.changeConfirmPassword,
+                                // BOTÓN REGISTRARSE (ancho completo)
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: AppButton(
+                                    text: isLoading
+                                        ? 'Registrando...'
+                                        : 'Registrarse',
+                                    onPressed: isLoading || !formularioValido
+                                        ? null
+                                        : registrarUsuario,
+                                  ),
                                 ),
                               ],
                             ),
-
-                          const SizedBox(height: 18),
-
-                          // ===================================
-                          // TÉRMINOS
-                          // ===================================
-                          AppTermsCheckbox(
-                            value: aceptarTerminos,
-                            onChanged: (value) {
-                              setState(() {
-                                aceptarTerminos = value;
-                              });
-                            },
                           ),
 
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 16),
 
-                          // ===================================
-                          // BOTÓN REGISTRARSE
-                          // ===================================
-                          AppButton(
-                            text: isLoading ? 'Registrando...' : 'Registrarse',
-
-                            onPressed: isLoading || !formularioValido
-                                ? null
-                                : registrarUsuario,
-                          ),
-
-                          const SizedBox(height: 5),
-
-                          // ===================================
                           // INICIAR SESIÓN
-                          // ===================================
                           TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, AppRoutes.login);
-                            },
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.login,
+                                    );
+                                  },
+                            style: TextButton.styleFrom(
+                              foregroundColor: _accentColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                            ),
                             child: const Text(
                               'Iniciar de Sesión',
                               style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
-
-                          const SizedBox(height: 15),
                         ],
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
